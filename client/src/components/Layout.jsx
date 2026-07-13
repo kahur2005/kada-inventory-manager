@@ -14,7 +14,10 @@ const NAV_ITEMS = {
     { to: '/warehouse/alerts', label: 'Alerts' },
     { to: '/warehouse/stock', label: 'Stock' },
   ],
-  store_admin: [{ to: '/store/stock', label: 'Stock' }],
+  store_admin: [
+    { to: '/store/scan', label: 'Scan' },
+    { to: '/store/stock', label: 'Stock' },
+  ],
   driver: [{ to: '/driver', label: 'My Deliveries' }],
 };
 

@@ -5,7 +5,7 @@ import { useAuth } from '../context/AuthContext';
 export const ROLE_HOME = {
   superadmin: '/admin/users',
   warehouse_admin: '/warehouse/alerts',
-  store_admin: '/store',
+  store_admin: '/store/scan',
   driver: '/driver',
   unassigned: '/pending',
 };
