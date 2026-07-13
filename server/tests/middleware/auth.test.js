@@ -1,5 +1,6 @@
 require('../setup');
 const jwt = require('jsonwebtoken');
+const mongoose = require('mongoose');
 const User = require('../../models/User');
 const { authRequired, requireRole, signToken } = require('../../middleware/auth');
 
@@ -48,6 +49,41 @@ test('authRequired sets req.user and calls next for a valid token', async () => 
   expect(req.user.id).toBe(user._id.toString());
   expect(req.user.role).toBe('warehouse_admin');
   expect(req.user.passwordHash).toBeUndefined();
+});
+
+test('authRequired stringifies warehouse and store ObjectIds on req.user', async () => {
+  const warehouseId = new mongoose.Types.ObjectId();
+  const storeId = new mongoose.Types.ObjectId();
+  const user = await User.create({
+    name: 'C',
+    email: 'c@example.com',
+    passwordHash: 'x',
+    role: 'warehouse_admin',
+    warehouse: warehouseId,
+    store: storeId,
+  });
+  const token = signToken(user);
+  const req = { headers: { authorization: `Bearer ${token}` } };
+  const res = mockRes();
+  const next = jest.fn();
+  await authRequired(req, res, next);
+  expect(next).toHaveBeenCalled();
+  expect(req.user.warehouse).toBe(warehouseId.toString());
+  expect(typeof req.user.warehouse).toBe('string');
+  expect(req.user.store).toBe(storeId.toString());
+  expect(typeof req.user.store).toBe('string');
+});
+
+test('authRequired rejects a token for a user that no longer exists', async () => {
+  const user = await User.create({ name: 'D', email: 'd@example.com', passwordHash: 'x', role: 'driver' });
+  const token = signToken(user);
+  await User.findByIdAndDelete(user._id);
+  const req = { headers: { authorization: `Bearer ${token}` } };
+  const res = mockRes();
+  const next = jest.fn();
+  await authRequired(req, res, next);
+  expect(res.status).toHaveBeenCalledWith(401);
+  expect(next).not.toHaveBeenCalled();
 });
 
 test('requireRole allows matching role and blocks others', () => {
