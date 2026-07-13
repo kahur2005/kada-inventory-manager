@@ -54,12 +54,18 @@ describe('POST /api/scan/driver', () => {
 
   test('rejects an unrecognized driver token', async () => {
     const wh = await Warehouse.create({ name: 'WH3', address: 'x' });
+    const store = await Store.create({ name: 'S-WH3', address: 'x' });
     const whAdmin = await User.create({ name: 'WA3', email: 'wa3@example.com', passwordHash: 'x', role: 'warehouse_admin', warehouse: wh._id });
+    const box = await makePackedBox(wh, store, 'BX-A0');
+
     const res = await request(app)
       .post('/api/scan/driver')
       .set('Authorization', `Bearer ${signToken(whAdmin)}`)
-      .send({ token: 'nope', boxIds: [] });
+      .send({ token: 'nope', boxIds: [box._id.toString()] });
     expect(res.status).toBe(400);
+
+    const stillPacked = await Box.findById(box._id);
+    expect(stillPacked.status).toBe('PACKED');
   });
 
   test('rejects a box from a different warehouse', async () => {
