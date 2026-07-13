@@ -5,6 +5,10 @@ const WarehouseStock = require('../models/WarehouseStock');
 const HandoverLog = require('../models/HandoverLog');
 const { generateQrDataUrl } = require('../utils/qr');
 
+function escapeRegex(str) {
+  return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 async function nextBoxCode() {
   const count = await Box.countDocuments();
   return `BX-${String(count + 1).padStart(4, '0')}`;
@@ -70,4 +74,49 @@ async function createBox(req, res) {
   res.status(201).json({ box, qrDataUrl });
 }
 
-module.exports = { createBox, nextBoxCode };
+async function listBoxes(req, res) {
+  const page = Math.max(parseInt(req.query.page, 10) || 1, 1);
+  const limit = Math.max(parseInt(req.query.limit, 10) || 10, 1);
+  const { status, search } = req.query;
+
+  const filter = {};
+  if (status) filter.status = status;
+  if (search) filter.code = new RegExp(escapeRegex(search), 'i');
+
+  if (req.user.role === 'warehouse_admin') {
+    filter.warehouse = req.user.warehouse;
+  } else if (req.user.role === 'driver') {
+    filter.assignedDriver = req.user.id;
+  } else if (req.user.role === 'store_admin') {
+    filter.destinationStore = req.user.store;
+  }
+
+  const [boxes, total] = await Promise.all([
+    Box.find(filter)
+      .populate('destinationStore', 'name address')
+      .populate('assignedDriver', 'name')
+      .populate('items.item', 'name sku unit')
+      .sort({ createdAt: -1 })
+      .skip((page - 1) * limit)
+      .limit(limit),
+    Box.countDocuments(filter),
+  ]);
+
+  res.json({ boxes, total, page, limit });
+}
+
+async function regenerateQr(req, res) {
+  if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+    return res.status(404).json({ message: 'Box not found' });
+  }
+
+  const box = await Box.findById(req.params.id);
+  if (!box) return res.status(404).json({ message: 'Box not found' });
+  if (req.user.role === 'warehouse_admin' && req.user.warehouse.toString() !== box.warehouse.toString()) {
+    return res.status(403).json({ message: 'Forbidden' });
+  }
+  const qrDataUrl = await generateQrDataUrl({ type: 'box', id: box._id.toString(), token: box.qrToken });
+  res.json({ qrDataUrl });
+}
+
+module.exports = { createBox, nextBoxCode, listBoxes, regenerateQr };
