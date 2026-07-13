@@ -20,6 +20,7 @@ app.use('/api/alerts', require('./routes/alertsRoutes'));
 app.use('/api/boxes', require('./routes/boxRoutes'));
 app.use('/api/drivers', require('./routes/driverRoutes'));
 app.use('/api/scan', require('./routes/scanRoutes'));
+app.use('/api', require('./routes/driverLocationRoutes'));
 
 app.use(notFound);
 app.use(errorHandler);
