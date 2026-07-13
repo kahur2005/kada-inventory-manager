@@ -2,6 +2,7 @@ require('../setup');
 const request = require('supertest');
 const app = require('../../app');
 const User = require('../../models/User');
+const { signToken } = require('../../middleware/auth');
 
 describe('POST /api/auth/register', () => {
   test('creates an unassigned user and returns a token', async () => {
@@ -65,5 +66,19 @@ describe('GET /api/auth/me', () => {
     await User.findOneAndUpdate({ email: 'eve@example.com' }, { role: 'driver' });
     const res = await request(app).get('/api/auth/me').set('Authorization', `Bearer ${reg.body.token}`);
     expect(res.body.user.role).toBe('driver');
+  });
+});
+
+describe('driverQrToken exposure', () => {
+  test('a driver sees their own driverQrToken via /auth/me', async () => {
+    const user = await User.create({ name: 'Dri', email: 'dri2@example.com', passwordHash: 'x', role: 'driver', driverQrToken: 'abc-123' });
+    const res = await request(app).get('/api/auth/me').set('Authorization', `Bearer ${signToken(user)}`);
+    expect(res.body.user.driverQrToken).toBe('abc-123');
+  });
+
+  test('a non-driver has a null driverQrToken', async () => {
+    const user = await User.create({ name: 'Sup', email: 'sup2@example.com', passwordHash: 'x', role: 'superadmin' });
+    const res = await request(app).get('/api/auth/me').set('Authorization', `Bearer ${signToken(user)}`);
+    expect(res.body.user.driverQrToken).toBeNull();
   });
 });

@@ -10,6 +10,7 @@ function toPublicUser(user) {
     role: user.role,
     warehouse: user.warehouse ? user.warehouse.toString() : null,
     store: user.store ? user.store.toString() : null,
+    driverQrToken: user.role === 'driver' ? user.driverQrToken : null,
   };
 }
 
