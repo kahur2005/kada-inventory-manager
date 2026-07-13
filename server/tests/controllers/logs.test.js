@@ -46,9 +46,19 @@ describe('GET /api/logs', () => {
     await HandoverLog.create({ box: boxInScope._id, actor: whAdmin._id, action: 'BOX_PACKED', meta: {} });
     await HandoverLog.create({ box: boxInScope._id, actor: driver._id, action: 'PICKED_UP', meta: {} }); // authored by driver, but box is in scope
     await HandoverLog.create({ box: boxOutOfScope._id, actor: driver._id, action: 'PICKED_UP', meta: {} }); // out of scope entirely
+    // Authored by whAdmin but box is in ANOTHER warehouse (out of box-ownership scope) — isolates the
+    // "authored by me" OR-branch: this must still be included on the strength of authorship alone,
+    // proving the $or isn't accidentally collapsing to just the box-ownership condition.
+    await HandoverLog.create({ box: boxOutOfScope._id, actor: whAdmin._id, action: 'PICKED_UP', meta: {} });
 
     const res = await request(app).get('/api/logs').set('Authorization', `Bearer ${signToken(whAdmin)}`);
-    expect(res.body.logs).toHaveLength(2);
+    expect(res.body.logs).toHaveLength(3);
+    // Sanity: the authored-but-out-of-warehouse-box log is genuinely present, proving the
+    // "authored by me" clause grants access independent of box ownership.
+    const authoredOutOfScopeLogs = res.body.logs.filter(
+      (l) => l.actor._id === whAdmin._id.toString() && l.box && l.box._id === boxOutOfScope._id.toString()
+    );
+    expect(authoredOutOfScopeLogs).toHaveLength(1);
   });
 
   test('filters by box id', async () => {
@@ -62,6 +72,23 @@ describe('GET /api/logs', () => {
 
     const res = await request(app).get(`/api/logs?box=${box._id}`).set('Authorization', `Bearer ${signToken(admin)}`);
     expect(res.body.logs).toHaveLength(1);
+  });
+
+  test('filters by store id', async () => {
+    const admin = await User.create({ name: 'S6', email: 's6@example.com', passwordHash: 'x', role: 'superadmin' });
+    const wh = await Warehouse.create({ name: 'WH6', address: 'x' });
+    const storeA = await Store.create({ name: 'StoreA', address: 'x' });
+    const storeB = await Store.create({ name: 'StoreB', address: 'y' });
+    const item = await Item.create({ name: 'C', sku: 'C1' });
+    const boxForStoreA = await Box.create({ code: 'BX-L6A', qrToken: 't6a', warehouse: wh._id, destinationStore: storeA._id, items: [{ item: item._id, qty: 1 }] });
+    const boxForStoreB = await Box.create({ code: 'BX-L6B', qrToken: 't6b', warehouse: wh._id, destinationStore: storeB._id, items: [{ item: item._id, qty: 1 }] });
+    await HandoverLog.create({ box: boxForStoreA._id, actor: admin._id, action: 'BOX_PACKED', meta: {} });
+    await HandoverLog.create({ box: boxForStoreB._id, actor: admin._id, action: 'BOX_PACKED', meta: {} });
+
+    const res = await request(app).get(`/api/logs?store=${storeA._id}`).set('Authorization', `Bearer ${signToken(admin)}`);
+    expect(res.status).toBe(200);
+    expect(res.body.logs).toHaveLength(1);
+    expect(res.body.logs[0].box._id).toBe(boxForStoreA._id.toString());
   });
 
   test('returns 400 when box query param is malformed ObjectId', async () => {
