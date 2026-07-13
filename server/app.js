@@ -21,6 +21,7 @@ app.use('/api/boxes', require('./routes/boxRoutes'));
 app.use('/api/drivers', require('./routes/driverRoutes'));
 app.use('/api/scan', require('./routes/scanRoutes'));
 app.use('/api', require('./routes/driverLocationRoutes'));
+app.use('/api/dashboard', require('./routes/dashboardRoutes'));
 
 app.use(notFound);
 app.use(errorHandler);
