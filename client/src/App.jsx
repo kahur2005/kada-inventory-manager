@@ -15,6 +15,7 @@ import AlertsPage from './pages/warehouse/AlertsPage';
 import WarehouseStockClientPage from './pages/warehouse/StockPage';
 import ScanPage from './pages/store/ScanPage';
 import StoreStockPage from './pages/store/StockPage';
+import HistoryPage from './pages/store/HistoryPage';
 import RoleHomePlaceholder from './pages/RoleHomePlaceholder';
 
 export default function App() {
@@ -47,6 +48,7 @@ export default function App() {
           <Route element={<ProtectedRoute allowedRoles={['store_admin']} />}>
             <Route path="/store/scan" element={<ScanPage />} />
             <Route path="/store/stock" element={<StoreStockPage />} />
+            <Route path="/store/history" element={<HistoryPage />} />
           </Route>
 
           <Route element={<ProtectedRoute allowedRoles={['driver']} />}>

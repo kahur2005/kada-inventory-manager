@@ -17,6 +17,7 @@ const NAV_ITEMS = {
   store_admin: [
     { to: '/store/scan', label: 'Scan' },
     { to: '/store/stock', label: 'Stock' },
+    { to: '/store/history', label: 'History' },
   ],
   driver: [{ to: '/driver', label: 'My Deliveries' }],
 };
