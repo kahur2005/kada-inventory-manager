@@ -3,6 +3,7 @@ const { v4: uuidv4 } = require('uuid');
 const Box = require('../models/Box');
 const WarehouseStock = require('../models/WarehouseStock');
 const HandoverLog = require('../models/HandoverLog');
+const User = require('../models/User');
 const { generateQrDataUrl } = require('../utils/qr');
 
 function escapeRegex(str) {
@@ -119,4 +120,37 @@ async function regenerateQr(req, res) {
   res.json({ qrDataUrl });
 }
 
-module.exports = { createBox, nextBoxCode, listBoxes, regenerateQr };
+async function assignDriverManual(req, res) {
+  // Validate :id path param is a valid ObjectId
+  if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+    return res.status(404).json({ message: 'Box not found' });
+  }
+
+  const { driverId } = req.body;
+  if (!driverId) return res.status(400).json({ message: 'driverId is required' });
+
+  // Validate driverId body param is a valid ObjectId
+  if (!mongoose.Types.ObjectId.isValid(driverId)) {
+    return res.status(400).json({ message: 'driverId must be a valid id' });
+  }
+
+  const driver = await User.findOne({ _id: driverId, role: 'driver' });
+  if (!driver) return res.status(404).json({ message: 'Driver not found' });
+
+  const box = await Box.findOne({ _id: req.params.id, warehouse: req.user.warehouse, status: 'PACKED' });
+  if (!box) return res.status(400).json({ message: 'Box not found or not eligible for assignment' });
+
+  box.status = 'ASSIGNED';
+  box.assignedDriver = driver._id;
+  await box.save();
+  await HandoverLog.create({
+    box: box._id,
+    actor: req.user.id,
+    action: 'DRIVER_ASSIGNED',
+    meta: { driver: driver._id.toString(), boxIds: [box._id.toString()] },
+  });
+
+  res.json({ box });
+}
+
+module.exports = { createBox, nextBoxCode, listBoxes, regenerateQr, assignDriverManual };

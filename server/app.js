@@ -18,6 +18,8 @@ app.use('/api/warehouse-stock', require('./routes/warehouseStockRoutes'));
 app.use('/api/store-stock', require('./routes/storeStockRoutes'));
 app.use('/api/alerts', require('./routes/alertsRoutes'));
 app.use('/api/boxes', require('./routes/boxRoutes'));
+app.use('/api/drivers', require('./routes/driverRoutes'));
+app.use('/api/scan', require('./routes/scanRoutes'));
 
 app.use(notFound);
 app.use(errorHandler);
