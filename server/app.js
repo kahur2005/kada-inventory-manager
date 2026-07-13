@@ -14,6 +14,7 @@ app.use('/api/users', require('./routes/userRoutes'));
 app.use('/api/items', require('./routes/itemRoutes'));
 app.use('/api/stores', require('./routes/storeRoutes'));
 app.use('/api/warehouses', require('./routes/warehouseRoutes'));
+app.use('/api/warehouse-stock', require('./routes/warehouseStockRoutes'));
 
 app.use(notFound);
 app.use(errorHandler);
