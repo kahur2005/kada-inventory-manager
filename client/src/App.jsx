@@ -12,6 +12,7 @@ import WarehousesPage from './pages/admin/WarehousesPage';
 import StoresPage from './pages/admin/StoresPage';
 import WarehouseStockPage from './pages/admin/WarehouseStockPage';
 import AlertsPage from './pages/warehouse/AlertsPage';
+import WarehouseStockClientPage from './pages/warehouse/StockPage';
 import RoleHomePlaceholder from './pages/RoleHomePlaceholder';
 
 export default function App() {
@@ -38,6 +39,7 @@ export default function App() {
 
           <Route element={<ProtectedRoute allowedRoles={['warehouse_admin']} />}>
             <Route path="/warehouse/alerts" element={<AlertsPage />} />
+            <Route path="/warehouse/stock" element={<WarehouseStockClientPage />} />
           </Route>
 
           <Route element={<ProtectedRoute allowedRoles={['store_admin']} />}>
