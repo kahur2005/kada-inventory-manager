@@ -29,6 +29,16 @@ describe('GET /api/users', () => {
     expect(res.body.total).toBe(2);
     expect(res.body.users.map((u) => u.name).sort()).toEqual(['Alan', 'Alice']);
   });
+
+  test('search with regex metacharacters does not crash and is treated literally', async () => {
+    const { token } = await makeSuperadmin();
+    await User.create({ name: 'Smith (Jr)', email: 'smithjr@example.com', passwordHash: 'x' });
+    await User.create({ name: 'Smithsonian', email: 'smithsonian@example.com', passwordHash: 'x' });
+
+    const res = await request(app).get('/api/users?search=Smith (').set('Authorization', `Bearer ${token}`);
+    expect(res.status).toBe(200);
+    expect(res.body.users.map((u) => u.name)).toEqual(['Smith (Jr)']);
+  });
 });
 
 describe('POST /api/users', () => {
@@ -87,6 +97,16 @@ describe('PATCH /api/users/:id/role', () => {
     const { token } = await makeSuperadmin();
     const target = await User.create({ name: 'T3', email: 't3@example.com', passwordHash: 'x' });
     const res = await request(app).patch(`/api/users/${target._id}/role`).set('Authorization', `Bearer ${token}`).send({ role: 'wizard' });
+    expect(res.status).toBe(400);
+  });
+
+  test('rejects a malformed warehouse id cleanly instead of crashing', async () => {
+    const { token } = await makeSuperadmin();
+    const target = await User.create({ name: 'T4', email: 't4@example.com', passwordHash: 'x' });
+    const res = await request(app)
+      .patch(`/api/users/${target._id}/role`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({ role: 'warehouse_admin', warehouse: 'not-a-valid-object-id' });
     expect(res.status).toBe(400);
   });
 });

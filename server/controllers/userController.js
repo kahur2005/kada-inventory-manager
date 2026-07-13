@@ -1,4 +1,5 @@
 const bcrypt = require('bcryptjs');
+const mongoose = require('mongoose');
 const { v4: uuidv4 } = require('uuid');
 const User = require('../models/User');
 const Warehouse = require('../models/Warehouse');
@@ -7,15 +8,21 @@ const { toPublicUser } = require('./authController');
 
 const ALLOWED_ROLES = ['superadmin', 'warehouse_admin', 'store_admin', 'driver', 'unassigned'];
 
+function escapeRegex(str) {
+  return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 async function buildScopePatch(role, warehouse, store) {
   if (role === 'warehouse_admin') {
     if (!warehouse) return { error: 'warehouse is required for role warehouse_admin' };
+    if (!mongoose.Types.ObjectId.isValid(warehouse)) return { error: 'warehouse not found' };
     const wh = await Warehouse.findById(warehouse);
     if (!wh) return { error: 'warehouse not found' };
     return { warehouse: wh._id, store: null };
   }
   if (role === 'store_admin') {
     if (!store) return { error: 'store is required for role store_admin' };
+    if (!mongoose.Types.ObjectId.isValid(store)) return { error: 'store not found' };
     const st = await Store.findById(store);
     if (!st) return { error: 'store not found' };
     return { warehouse: null, store: st._id };
@@ -29,7 +36,7 @@ async function listUsers(req, res) {
   const search = (req.query.search || '').trim();
 
   const filter = search
-    ? { $or: [{ name: new RegExp(search, 'i') }, { email: new RegExp(search, 'i') }] }
+    ? { $or: [{ name: new RegExp(escapeRegex(search), 'i') }, { email: new RegExp(escapeRegex(search), 'i') }] }
     : {};
 
   const [users, total] = await Promise.all([
