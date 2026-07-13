@@ -22,6 +22,7 @@ app.use('/api/drivers', require('./routes/driverRoutes'));
 app.use('/api/scan', require('./routes/scanRoutes'));
 app.use('/api', require('./routes/driverLocationRoutes'));
 app.use('/api/dashboard', require('./routes/dashboardRoutes'));
+app.use('/api/logs', require('./routes/logsRoutes'));
 
 app.use(notFound);
 app.use(errorHandler);
