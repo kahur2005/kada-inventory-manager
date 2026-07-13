@@ -9,9 +9,7 @@ app.use(cors({ origin: process.env.CLIENT_ORIGIN || '*' }));
 app.use(express.json());
 
 app.use('/api/health', healthRoutes);
-
-// Plans 1-4 mount their routers here, e.g.:
-// app.use('/api/auth', require('./routes/authRoutes'));
+app.use('/api/auth', require('./routes/authRoutes'));
 
 app.use(notFound);
 app.use(errorHandler);
