@@ -10,6 +10,7 @@ app.use(express.json());
 
 app.use('/api/health', healthRoutes);
 app.use('/api/auth', require('./routes/authRoutes'));
+app.use('/api/users', require('./routes/userRoutes'));
 
 app.use(notFound);
 app.use(errorHandler);
