@@ -1,0 +1,14 @@
+{
+  "name": "logistiq",
+  "private": true,
+  "version": "1.0.0",
+  "scripts": {
+    "dev": "concurrently -n SERVER,CLIENT -c green,blue \"npm run dev --prefix server\" \"npm run dev --prefix client\"",
+    "seed": "npm run seed --prefix server",
+    "test:server": "npm test --prefix server",
+    "test:client": "npm test --prefix client"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}
