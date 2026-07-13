@@ -17,6 +17,7 @@ app.use('/api/warehouses', require('./routes/warehouseRoutes'));
 app.use('/api/warehouse-stock', require('./routes/warehouseStockRoutes'));
 app.use('/api/store-stock', require('./routes/storeStockRoutes'));
 app.use('/api/alerts', require('./routes/alertsRoutes'));
+app.use('/api/boxes', require('./routes/boxRoutes'));
 
 app.use(notFound);
 app.use(errorHandler);
