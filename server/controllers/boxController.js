@@ -153,4 +153,25 @@ async function assignDriverManual(req, res) {
   res.json({ box });
 }
 
-module.exports = { createBox, nextBoxCode, listBoxes, regenerateQr, assignDriverManual };
+async function pickupBox(req, res) {
+  // Validate :id path param is a valid ObjectId
+  if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+    return res.status(404).json({ message: 'Box not found' });
+  }
+
+  const { coords } = req.body;
+  const box = await Box.findById(req.params.id);
+  if (!box) return res.status(404).json({ message: 'Box not found' });
+  if (!box.assignedDriver || box.assignedDriver.toString() !== req.user.id) {
+    return res.status(403).json({ message: 'Forbidden' });
+  }
+  if (box.status !== 'ASSIGNED') {
+    return res.status(400).json({ message: `Box is ${box.status}, expected ASSIGNED` });
+  }
+  box.status = 'IN_TRANSIT';
+  await box.save();
+  await HandoverLog.create({ box: box._id, actor: req.user.id, action: 'PICKED_UP', coords, meta: {} });
+  res.json({ box });
+}
+
+module.exports = { createBox, nextBoxCode, listBoxes, regenerateQr, assignDriverManual, pickupBox };
