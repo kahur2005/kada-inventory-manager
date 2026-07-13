@@ -3,9 +3,18 @@ import { useAuth } from '../context/AuthContext';
 
 // Plans 2-4 append entries for their own routes as those screens ship.
 const NAV_ITEMS = {
-  superadmin: [{ to: '/admin/users', label: 'Users' }],
-  warehouse_admin: [],
-  store_admin: [],
+  superadmin: [
+    { to: '/admin/users', label: 'Users' },
+    { to: '/admin/items', label: 'Items' },
+    { to: '/admin/warehouses', label: 'Warehouses' },
+    { to: '/admin/stores', label: 'Stores' },
+    { to: '/admin/warehouse-stock', label: 'Warehouse Stock' },
+  ],
+  warehouse_admin: [
+    { to: '/warehouse/alerts', label: 'Alerts' },
+    { to: '/warehouse/stock', label: 'Stock' },
+  ],
+  store_admin: [{ to: '/store/stock', label: 'Stock' }],
   driver: [{ to: '/driver', label: 'My Deliveries' }],
 };
 
