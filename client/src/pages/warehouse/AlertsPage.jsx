@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import apiClient from '../../api/client';
 
 export default function AlertsPage() {
   const [alerts, setAlerts] = useState(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     apiClient.get('/alerts').then((res) => setAlerts(res.data.alerts));
@@ -19,9 +21,7 @@ export default function AlertsPage() {
           <p>
             {alert.store.name} — {alert.item.name}: {alert.qty} left (threshold {alert.threshold})
           </p>
-          <button disabled title="Available once box creation ships (Plan 3)">
-            Pack a box for this store
-          </button>
+          <button onClick={() => navigate('/warehouse/boxes')}>Pack a box for this store</button>
         </div>
       ))}
     </div>
