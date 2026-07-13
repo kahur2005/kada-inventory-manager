@@ -24,7 +24,7 @@ export default function DashboardMap({ warehouses = [], stores = [], driverLocat
       <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" attribution="&copy; OpenStreetMap contributors" />
 
       {warehouses
-        .filter((wh) => wh.coords?.lat != null)
+        .filter((wh) => wh.coords?.lat != null && wh.coords?.lng != null)
         .map((wh) => (
           <Marker key={wh._id} position={[wh.coords.lat, wh.coords.lng]} icon={warehouseIcon}>
             <Popup>{wh.name}</Popup>
@@ -32,7 +32,7 @@ export default function DashboardMap({ warehouses = [], stores = [], driverLocat
         ))}
 
       {stores
-        .filter((store) => store.coords?.lat != null)
+        .filter((store) => store.coords?.lat != null && store.coords?.lng != null)
         .map((store) => (
           <Marker key={store._id} position={[store.coords.lat, store.coords.lng]} icon={storeIcon}>
             <Popup>{store.name}</Popup>
@@ -40,7 +40,7 @@ export default function DashboardMap({ warehouses = [], stores = [], driverLocat
         ))}
 
       {driverLocations
-        .filter((dl) => dl.coords?.lat != null)
+        .filter((dl) => dl.coords?.lat != null && dl.coords?.lng != null)
         .map((dl) => (
           <Marker key={dl._id} position={[dl.coords.lat, dl.coords.lng]} icon={driverIcon}>
             <Popup>

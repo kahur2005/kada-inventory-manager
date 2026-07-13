@@ -24,4 +24,15 @@ describe('DashboardMap', () => {
     expect(screen.getAllByTestId('marker')).toHaveLength(3);
     expect(screen.getByText(/dri — updated/i)).toBeInTheDocument();
   });
+
+  test('excludes entries with partial coords (lat present, lng missing)', () => {
+    render(
+      <DashboardMap
+        warehouses={[{ _id: 'w1', name: 'WH A', coords: { lat: 5, lng: null } }]}
+        stores={[{ _id: 's1', name: 'Store 1', coords: { lat: 5, lng: null } }]}
+        driverLocations={[{ _id: 'd1', driver: { name: 'Dri' }, coords: { lat: 5, lng: null }, updatedAt: new Date().toISOString() }]}
+      />
+    );
+    expect(screen.queryAllByTestId('marker')).toHaveLength(0);
+  });
 });
