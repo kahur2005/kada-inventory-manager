@@ -2,6 +2,7 @@ const mongoose = require('mongoose');
 const User = require('../models/User');
 const Box = require('../models/Box');
 const HandoverLog = require('../models/HandoverLog');
+const StoreStock = require('../models/StoreStock');
 
 async function scanDriverAssign(req, res) {
   const { token, boxIds } = req.body;
@@ -36,4 +37,48 @@ async function scanDriverAssign(req, res) {
   res.json({ message: `${boxes.length} box(es) assigned to ${driver.name}`, driver: { id: driver._id.toString(), name: driver.name } });
 }
 
-module.exports = { scanDriverAssign };
+async function scanBox(req, res) {
+  const { token, code, coords } = req.body;
+  if (!token && !code) {
+    return res.status(400).json({ message: 'token or code is required' });
+  }
+
+  const box = token
+    ? await Box.findOne({ qrToken: token }).populate('items.item', 'name sku unit')
+    : await Box.findOne({ code: code.toUpperCase() }).populate('items.item', 'name sku unit');
+
+  if (!box) {
+    return res.status(404).json({ message: 'Box not found' });
+  }
+  if (!['ASSIGNED', 'IN_TRANSIT'].includes(box.status)) {
+    return res.status(400).json({ message: `Box is already ${box.status}` });
+  }
+  if (box.destinationStore.toString() !== req.user.store) {
+    return res.status(403).json({ message: 'This box is not destined for your store' });
+  }
+
+  for (const line of box.items) {
+    await StoreStock.findOneAndUpdate(
+      { store: req.user.store, item: line.item._id },
+      { $inc: { qty: line.qty }, $setOnInsert: { threshold: 0 } },
+      { upsert: true }
+    );
+  }
+
+  box.status = 'DELIVERED';
+  await box.save();
+
+  const items = box.items.map((line) => ({ name: line.item.name, qty: line.qty }));
+
+  await HandoverLog.create({
+    box: box._id,
+    actor: req.user.id,
+    action: 'DELIVERED',
+    coords,
+    meta: { items },
+  });
+
+  res.json({ message: 'Box delivered', items, box });
+}
+
+module.exports = { scanDriverAssign, scanBox };
