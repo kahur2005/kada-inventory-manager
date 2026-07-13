@@ -4,42 +4,54 @@ import apiClient from '../api/client';
 const AuthContext = createContext(null);
 const TOKEN_KEY = 'logistiq_token';
 
-function decodeJwtPayload(token) {
-  try {
-    return JSON.parse(atob(token.split('.')[1]));
-  } catch {
-    return null;
-  }
-}
-
 export function AuthProvider({ children }) {
   const [token, setToken] = useState(() => localStorage.getItem(TOKEN_KEY));
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!token) {
-      setUser(null);
-      setLoading(false);
-      return;
+    let cancelled = false;
+
+    async function loadUser() {
+      if (!token) {
+        setUser(null);
+        setLoading(false);
+        return;
+      }
+      setLoading(true);
+      try {
+        const res = await apiClient.get('/auth/me');
+        if (!cancelled) setUser(res.data.user);
+      } catch {
+        if (!cancelled) {
+          localStorage.removeItem(TOKEN_KEY);
+          setToken(null);
+          setUser(null);
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
     }
-    const payload = decodeJwtPayload(token);
-    if (!payload) {
-      setUser(null);
-      setLoading(false);
-      return;
-    }
-    // Plan 1 replaces this stub with `apiClient.get('/auth/me')`.
-    setUser({ id: payload.id, role: payload.role });
-    setLoading(false);
+
+    loadUser();
+    return () => {
+      cancelled = true;
+    };
   }, [token]);
 
-  const login = useCallback(async (email, password) => {
-    const res = await apiClient.post('/auth/login', { email, password });
-    localStorage.setItem(TOKEN_KEY, res.data.token);
-    setToken(res.data.token);
-    return res.data;
+  const applyToken = useCallback((newToken) => {
+    localStorage.setItem(TOKEN_KEY, newToken);
+    setToken(newToken);
   }, []);
+
+  const login = useCallback(
+    async (email, password) => {
+      const res = await apiClient.post('/auth/login', { email, password });
+      applyToken(res.data.token);
+      return res.data;
+    },
+    [applyToken]
+  );
 
   const logout = useCallback(() => {
     localStorage.removeItem(TOKEN_KEY);
@@ -48,7 +60,7 @@ export function AuthProvider({ children }) {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, token, loading, login, logout }}>
+    <AuthContext.Provider value={{ user, token, loading, login, logout, applyToken }}>
       {children}
     </AuthContext.Provider>
   );
