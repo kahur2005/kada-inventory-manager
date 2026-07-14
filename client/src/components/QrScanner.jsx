@@ -20,10 +20,23 @@ export default function QrScanner({ onScan, onError }) {
       .catch((err) => onError?.(err));
 
     return () => {
-      scanner
-        .stop()
-        .catch(() => {})
-        .finally(() => scanner.clear());
+      const safeClear = () => {
+        try {
+          scanner.clear();
+        } catch {
+          // clear() can throw synchronously if the camera never
+          // successfully started — safe to ignore.
+        }
+      };
+      try {
+        // stop() itself can throw synchronously (not just reject) if the
+        // scanner never reached a running state — e.g. no camera device,
+        // or the component unmounted before start() resolved (React
+        // StrictMode's double effect-invocation in dev triggers this).
+        scanner.stop().then(safeClear).catch(safeClear);
+      } catch {
+        safeClear();
+      }
     };
   }, [onScan, onError]);
 

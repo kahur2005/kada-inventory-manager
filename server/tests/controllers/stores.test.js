@@ -31,6 +31,16 @@ describe('Store CRUD', () => {
     expect(res.status).toBe(403);
   });
 
+  test('warehouse_admin can list stores (needed to populate the destination-store dropdown when creating a box)', async () => {
+    const wh = await require('../../models/Warehouse').create({ name: 'WH', address: 'x' });
+    const whAdmin = await User.create({ name: 'WA', email: 'wa@example.com', passwordHash: 'x', role: 'warehouse_admin', warehouse: wh._id });
+    await Store.create({ name: 'Store 1', address: 'A' });
+    await Store.create({ name: 'Store 2', address: 'B' });
+    const res = await request(app).get('/api/stores').set('Authorization', `Bearer ${signToken(whAdmin)}`);
+    expect(res.status).toBe(200);
+    expect(res.body.stores).toHaveLength(2);
+  });
+
   test('superadmin creates a store with coords set by map click', async () => {
     const admin = await User.create({ name: 'S2', email: 's2@example.com', passwordHash: 'x', role: 'superadmin' });
     const res = await request(app)
