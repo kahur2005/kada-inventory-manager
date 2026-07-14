@@ -15,7 +15,15 @@ describe('HistoryPage', () => {
       }
       if (url === '/logs') {
         return Promise.resolve({
-          data: { logs: [{ _id: 'l1', action: 'STOCK_ADJUSTED', meta: { oldQty: 3, newQty: 9 }, timestamp: '2026-07-13T10:00:00.000Z' }], total: 1, page: 1, limit: 20 },
+          data: {
+            logs: [
+              { _id: 'l1', action: 'STOCK_ADJUSTED', meta: { oldQty: 3, newQty: 9 }, timestamp: '2026-07-13T10:00:00.000Z' },
+              { _id: 'l2', action: 'DELIVERED', meta: {}, timestamp: '2026-07-13T11:00:00.000Z' },
+            ],
+            total: 2,
+            page: 1,
+            limit: 20,
+          },
         });
       }
       return Promise.reject(new Error(`unexpected ${url}`));
@@ -27,5 +35,6 @@ describe('HistoryPage', () => {
     expect(apiClient.get).toHaveBeenCalledWith('/boxes', { params: { status: 'DELIVERED', search: '', page: 1, limit: 10 } });
     expect(apiClient.get).toHaveBeenCalledWith('/logs', { params: { page: 1, limit: 20 } });
     expect(screen.getByText(/3 → 9/)).toBeInTheDocument();
+    expect(screen.queryByText(new Date('2026-07-13T11:00:00.000Z').toLocaleString())).not.toBeInTheDocument();
   });
 });
