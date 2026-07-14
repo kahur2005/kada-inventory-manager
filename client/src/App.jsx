@@ -23,6 +23,8 @@ import DeliveriesPage from './pages/driver/DeliveriesPage';
 import QrPage from './pages/driver/QrPage';
 import DashboardPage from './pages/superadmin/DashboardPage';
 
+import './App.css';
+
 export default function App() {
   return (
     <AuthProvider>

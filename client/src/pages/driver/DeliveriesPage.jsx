@@ -63,30 +63,49 @@ export default function DeliveriesPage() {
 
   return (
     <div>
-      <h1>
-        My Deliveries {activeCount > 0 && <span aria-label="active deliveries badge">{activeCount}</span>}
-      </h1>
-      <button onClick={toggleDelivering}>{delivering ? 'Stop delivering' : 'Start delivering'}</button>
+      <div className="section-header">
+        <h1>
+          My Deliveries {activeCount > 0 && <span aria-label="active deliveries badge">{activeCount}</span>}
+        </h1>
+        <button onClick={toggleDelivering}>
+          {delivering ? 'Stop delivering' : 'Start delivering'}
+        </button>
+      </div>
 
       {Object.entries(grouped).map(([storeName, storeBoxes]) => (
-        <div key={storeName}>
-          <h2>{storeName}</h2>
+        <div key={storeName} className="delivery-group">
+          <div className="delivery-group-header">
+            <span>{storeName}</span>
+            <span className="badge badge-gray">{storeBoxes.length} box{storeBoxes.length !== 1 ? 'es' : ''}</span>
+          </div>
           {storeBoxes.map((box) => (
-            <div key={box._id}>
-              <p><span>{box.code}</span> — {box.status}</p>
-              {box.destinationStore?.address && (
-                <p>{box.destinationStore.address}</p>
-              )}
-              {box.destinationStore?.coords?.lat != null && (
-                <a
-                  href={`https://www.openstreetmap.org/?mlat=${box.destinationStore.coords.lat}&mlon=${box.destinationStore.coords.lng}`}
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  Open map pin
-                </a>
-              )}
-              {box.status === 'ASSIGNED' && <button onClick={() => handlePickup(box)}>Pick up</button>}
+            <div key={box._id} className="delivery-item">
+              <div className="delivery-item-info">
+                <span className="delivery-item-code">{box.code}</span>
+                {box.destinationStore?.address && (
+                  <span className="delivery-item-address">{box.destinationStore.address}</span>
+                )}
+              </div>
+              <div className="flex items-center gap-sm">
+                <span className={`badge badge-${box.status === 'IN_TRANSIT' ? 'orange' : box.status === 'ASSIGNED' ? 'yellow' : 'green'}`}>
+                  {box.status}
+                </span>
+                {box.destinationStore?.coords?.lat != null && (
+                  <a
+                    href={`https://www.openstreetmap.org/?mlat=${box.destinationStore.coords.lat}&mlon=${box.destinationStore.coords.lng}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="btn-sm"
+                  >
+                    Map
+                  </a>
+                )}
+                {box.status === 'ASSIGNED' && (
+                  <button className="btn-success btn-sm" onClick={() => handlePickup(box)}>
+                    Pick up
+                  </button>
+                )}
+              </div>
             </div>
           ))}
         </div>

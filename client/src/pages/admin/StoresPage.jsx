@@ -30,24 +30,32 @@ export default function StoresPage() {
     <div>
       <h1>Stores</h1>
 
-      {stores.map((store) => (
-        <div key={store._id}>
-          <h2>{store.name}</h2>
-          <p>{store.address}</p>
-        </div>
-      ))}
+      <div className="store-list">
+        {stores.map((store) => (
+          <div key={store._id} className="store-card">
+            <h3>{store.name}</h3>
+            <p>{store.address}</p>
+          </div>
+        ))}
+      </div>
 
       <form onSubmit={handleCreate}>
         <h2>New store</h2>
-        <label htmlFor="store-name">Name</label>
-        <input id="store-name" value={name} onChange={(e) => setName(e.target.value)} required />
+        <div className="store-form-layout">
+          <div className="store-form-fields">
+            <label htmlFor="store-name">Name</label>
+            <input id="store-name" value={name} onChange={(e) => setName(e.target.value)} required />
 
-        <label htmlFor="store-address">Address</label>
-        <input id="store-address" value={address} onChange={(e) => setAddress(e.target.value)} required />
-
-        <MapPicker coords={coords} onChange={setCoords} />
-
-        <button type="submit">Create store</button>
+            <label htmlFor="store-address">Address</label>
+            <input id="store-address" value={address} onChange={(e) => setAddress(e.target.value)} required />
+          </div>
+          <div className="store-form-map">
+            <MapPicker coords={coords} onChange={setCoords} />
+          </div>
+          <div className="store-form-actions">
+            <button type="submit">Create store</button>
+          </div>
+        </div>
       </form>
     </div>
   );

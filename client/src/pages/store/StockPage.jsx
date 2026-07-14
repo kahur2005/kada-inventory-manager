@@ -46,12 +46,12 @@ export default function StockPage() {
           {rows.map((row) => (
             <tr key={row._id}>
               <td>
-                {row.item?.name} {row.belowThreshold && <span>Low stock</span>}
+                {row.item?.name} {row.belowThreshold && <span className="low-stock-badge">Low stock</span>}
               </td>
               <td>
                 {opname ? (
                   <>
-                    <label htmlFor={`qty-${row._id}`}>{`Qty for ${row.item?.name}`}</label>
+                    <label htmlFor={`qty-${row._id}`} className="sr-only">{`Qty for ${row.item?.name}`}</label>
                     <input
                       id={`qty-${row._id}`}
                       aria-label={`Qty for ${row.item?.name}`}

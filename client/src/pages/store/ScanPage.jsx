@@ -40,13 +40,22 @@ export default function ScanPage() {
   return (
     <div>
       <h1>Scan Incoming Box</h1>
-      <QrScanner onScan={handleScan} onError={() => {}} />
+      <div className="card mb-lg">
+        <div className="card-header">
+          <h3>Camera Scanner</h3>
+        </div>
+        <QrScanner onScan={handleScan} onError={() => {}} />
+      </div>
 
-      <form onSubmit={handleManualSubmit}>
-        <label htmlFor="manual-box-code">Box code (camera fallback)</label>
-        <input id="manual-box-code" value={manualCode} onChange={(e) => setManualCode(e.target.value)} required />
-        <button type="submit">Submit code</button>
-      </form>
+      <div className="form-card">
+        <form onSubmit={handleManualSubmit}>
+          <label htmlFor="manual-box-code">Box code (camera fallback)</label>
+          <input id="manual-box-code" value={manualCode} onChange={(e) => setManualCode(e.target.value)} required />
+          <div className="form-actions">
+            <button type="submit">Submit code</button>
+          </div>
+        </form>
+      </div>
     </div>
   );
 }

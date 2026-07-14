@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import apiClient from '../../api/client';
 import MapPicker from '../../components/MapPicker';
 
@@ -11,6 +11,8 @@ export default function WarehousesPage() {
   const [capacityM3, setCapacityM3] = useState(0);
   const [areaM2, setAreaM2] = useState(0);
   const [selectedStores, setSelectedStores] = useState([]);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const dropdownRef = useRef(null);
 
   const load = useCallback(async () => {
     const [whRes, storeRes] = await Promise.all([apiClient.get('/warehouses'), apiClient.get('/stores')]);
@@ -21,6 +23,16 @@ export default function WarehousesPage() {
   useEffect(() => {
     load();
   }, [load]);
+
+  useEffect(() => {
+    function handleClickOutside(e) {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+        setDropdownOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   async function handleCreate(e) {
     e.preventDefault();
@@ -41,9 +53,10 @@ export default function WarehousesPage() {
     load();
   }
 
-  function handleStoreSelect(e) {
-    const values = Array.from(e.target.selectedOptions).map((o) => o.value);
-    setSelectedStores(values);
+  function toggleStore(storeId) {
+    setSelectedStores((prev) =>
+      prev.includes(storeId) ? prev.filter((id) => id !== storeId) : [...prev, storeId]
+    );
   }
 
   return (
@@ -51,42 +64,67 @@ export default function WarehousesPage() {
       <h1>Warehouses</h1>
 
       {warehouses.map((wh) => (
-        <div key={wh._id}>
-          <h2>{wh.name}</h2>
+        <div key={wh._id} className="warehouse-card">
+          <h3>{wh.name}</h3>
           <p>{wh.address}</p>
-          <div style={{ background: '#eee', height: 8 }}>
-            <div style={{ background: '#3366ff', width: `${wh.utilizationPct}%`, height: 8 }} />
+          <div className="progress-bar">
+            <div className="progress-bar-fill" style={{ width: `${wh.utilizationPct}%` }} />
           </div>
-          <p>{wh.utilizationPct}% utilized</p>
+          <div className="progress-label">{wh.utilizationPct}% utilized</div>
         </div>
       ))}
 
       <form onSubmit={handleCreate}>
         <h2>New warehouse</h2>
-        <label htmlFor="wh-name">Name</label>
-        <input id="wh-name" value={name} onChange={(e) => setName(e.target.value)} required />
+        <div className="warehouse-form-layout">
+          <div className="warehouse-form-fields">
+            <label htmlFor="wh-name">Name</label>
+            <input id="wh-name" value={name} onChange={(e) => setName(e.target.value)} required />
 
-        <label htmlFor="wh-address">Address</label>
-        <input id="wh-address" value={address} onChange={(e) => setAddress(e.target.value)} required />
+            <label htmlFor="wh-address">Address</label>
+            <input id="wh-address" value={address} onChange={(e) => setAddress(e.target.value)} required />
 
-        <label htmlFor="wh-capacity">Capacity (m³)</label>
-        <input id="wh-capacity" type="number" value={capacityM3} onChange={(e) => setCapacityM3(e.target.value)} />
+            <label htmlFor="wh-capacity">Capacity (m³)</label>
+            <input id="wh-capacity" type="number" value={capacityM3} onChange={(e) => setCapacityM3(e.target.value)} />
 
-        <label htmlFor="wh-area">Area (m²)</label>
-        <input id="wh-area" type="number" value={areaM2} onChange={(e) => setAreaM2(e.target.value)} />
+            <label htmlFor="wh-area">Area (m²)</label>
+            <input id="wh-area" type="number" value={areaM2} onChange={(e) => setAreaM2(e.target.value)} />
 
-        <label htmlFor="wh-stores">Linked stores</label>
-        <select id="wh-stores" multiple value={selectedStores} onChange={handleStoreSelect}>
-          {stores.map((store) => (
-            <option key={store._id} value={store._id}>
-              {store.name}
-            </option>
-          ))}
-        </select>
-
-        <MapPicker coords={coords} onChange={setCoords} />
-
-        <button type="submit">Create warehouse</button>
+            <label>Linked stores</label>
+            <div className="custom-dropdown" ref={dropdownRef}>
+              <button
+                type="button"
+                className="custom-dropdown-trigger"
+                onClick={() => setDropdownOpen((o) => !o)}
+              >
+                {selectedStores.length === 0
+                  ? 'Select stores...'
+                  : `${selectedStores.length} store(s) selected`}
+                <span className="custom-dropdown-arrow">&#9662;</span>
+              </button>
+              {dropdownOpen && (
+                <div className="custom-dropdown-menu">
+                  {stores.map((store) => (
+                    <label key={store._id} className="custom-dropdown-item">
+                      <input
+                        type="checkbox"
+                        checked={selectedStores.includes(store._id)}
+                        onChange={() => toggleStore(store._id)}
+                      />
+                      {store.name}
+                    </label>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+          <div className="warehouse-form-map">
+            <MapPicker coords={coords} onChange={setCoords} />
+          </div>
+          <div className="warehouse-form-actions">
+            <button type="submit">Create warehouse</button>
+          </div>
+        </div>
       </form>
     </div>
   );

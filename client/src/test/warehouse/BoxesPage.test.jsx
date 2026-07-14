@@ -32,7 +32,7 @@ describe('BoxesPage', () => {
   });
 
   test('filters by status', async () => {
-    apiClient.get = vi.fn((url, config) => {
+    apiClient.get = vi.fn((url) => {
       if (url === '/boxes') return Promise.resolve({ data: { boxes: [], total: 0, page: 1, limit: 10 } });
       if (url === '/stores') return Promise.resolve({ data: { stores: [] } });
       if (url === '/items') return Promise.resolve({ data: { items: [] } });
