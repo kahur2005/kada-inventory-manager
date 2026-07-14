@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 // Plans 2-4 append entries for their own routes as those screens ship.
 const NAV_ITEMS = {
   superadmin: [
+    { to: '/dashboard', label: 'Dashboard' },
     { to: '/admin/users', label: 'Users' },
     { to: '/admin/items', label: 'Items' },
     { to: '/admin/warehouses', label: 'Warehouses' },

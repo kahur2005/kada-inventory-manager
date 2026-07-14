@@ -3,7 +3,7 @@ import { useAuth } from '../context/AuthContext';
 
 // Plans 2-4 change these targets as each role's real landing screen ships.
 export const ROLE_HOME = {
-  superadmin: '/admin/users',
+  superadmin: '/dashboard',
   warehouse_admin: '/warehouse/alerts',
   store_admin: '/store/scan',
   driver: '/driver',

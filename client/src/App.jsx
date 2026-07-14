@@ -19,6 +19,7 @@ import ScanPage from './pages/store/ScanPage';
 import StoreStockPage from './pages/store/StockPage';
 import HistoryPage from './pages/store/HistoryPage';
 import RoleHomePlaceholder from './pages/RoleHomePlaceholder';
+import DashboardPage from './pages/superadmin/DashboardPage';
 
 export default function App() {
   return (
@@ -35,6 +36,7 @@ export default function App() {
           </Route>
 
           <Route element={<ProtectedRoute allowedRoles={['superadmin']} />}>
+            <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/admin/users" element={<UsersPage />} />
             <Route path="/admin/items" element={<ItemsPage />} />
             <Route path="/admin/warehouses" element={<WarehousesPage />} />
