@@ -23,7 +23,10 @@ const NAV_ITEMS = {
     { to: '/store/stock', label: 'Stock' },
     { to: '/store/history', label: 'History' },
   ],
-  driver: [{ to: '/driver', label: 'My Deliveries' }],
+  driver: [
+    { to: '/driver', label: 'My Deliveries' },
+    { to: '/driver/qr', label: 'My QR' },
+  ],
 };
 
 export default function Layout() {

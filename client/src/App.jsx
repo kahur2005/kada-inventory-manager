@@ -20,6 +20,7 @@ import ScanPage from './pages/store/ScanPage';
 import StoreStockPage from './pages/store/StockPage';
 import HistoryPage from './pages/store/HistoryPage';
 import DeliveriesPage from './pages/driver/DeliveriesPage';
+import QrPage from './pages/driver/QrPage';
 import DashboardPage from './pages/superadmin/DashboardPage';
 
 export default function App() {
@@ -61,6 +62,7 @@ export default function App() {
 
           <Route element={<ProtectedRoute allowedRoles={['driver']} />}>
             <Route path="/driver" element={<DeliveriesPage />} />
+            <Route path="/driver/qr" element={<QrPage />} />
           </Route>
         </Route>
       </Routes>
