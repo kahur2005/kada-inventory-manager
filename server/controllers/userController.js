@@ -84,6 +84,10 @@ async function updateRole(req, res) {
   if (!ALLOWED_ROLES.includes(role)) {
     return res.status(400).json({ message: `role must be one of ${ALLOWED_ROLES.join(', ')}` });
   }
+  // Validate that req.params.id is a well-formed MongoDB ObjectId before calling findById
+  if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+    return res.status(404).json({ message: 'User not found' });
+  }
   const user = await User.findById(req.params.id);
   if (!user) return res.status(404).json({ message: 'User not found' });
 
@@ -101,6 +105,10 @@ async function updateRole(req, res) {
 }
 
 async function deleteUser(req, res) {
+  // Validate that req.params.id is a well-formed MongoDB ObjectId before calling findByIdAndDelete
+  if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+    return res.status(404).json({ message: 'User not found' });
+  }
   const user = await User.findByIdAndDelete(req.params.id);
   if (!user) return res.status(404).json({ message: 'User not found' });
   res.json({ message: 'User deleted' });

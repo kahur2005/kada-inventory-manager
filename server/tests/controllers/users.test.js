@@ -109,6 +109,16 @@ describe('PATCH /api/users/:id/role', () => {
       .send({ role: 'warehouse_admin', warehouse: 'not-a-valid-object-id' });
     expect(res.status).toBe(400);
   });
+
+  test('rejects a malformed user id (path param) with 404 instead of crashing', async () => {
+    const { token } = await makeSuperadmin();
+    const res = await request(app)
+      .patch('/api/users/not-a-valid-id/role')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ role: 'driver' });
+    expect(res.status).toBe(404);
+    expect(res.body.message).toBe('User not found');
+  });
 });
 
 describe('DELETE /api/users/:id', () => {
@@ -125,5 +135,14 @@ describe('DELETE /api/users/:id', () => {
     const fakeId = '64b000000000000000000000';
     const res = await request(app).delete(`/api/users/${fakeId}`).set('Authorization', `Bearer ${token}`);
     expect(res.status).toBe(404);
+  });
+
+  test('rejects a malformed user id (path param) with 404 instead of crashing', async () => {
+    const { token } = await makeSuperadmin();
+    const res = await request(app)
+      .delete('/api/users/not-a-valid-id')
+      .set('Authorization', `Bearer ${token}`);
+    expect(res.status).toBe(404);
+    expect(res.body.message).toBe('User not found');
   });
 });
