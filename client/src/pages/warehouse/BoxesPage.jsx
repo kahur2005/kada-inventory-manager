@@ -33,7 +33,12 @@ export default function BoxesPage() {
       destinationStore,
       items: [{ item: lineItem, qty: Number(lineQty) }],
     });
-    setNewBoxQr({ code: res.data.box.code, dataUrl: res.data.qrDataUrl });
+    const storeName = stores.find((s) => s._id === destinationStore)?.name || '';
+    setNewBoxQr({
+      code: res.data.box.code,
+      dataUrl: res.data.qrDataUrl,
+      to: storeName,
+    });
     setLineItem('');
     setLineQty('');
     loadBoxes();
@@ -109,7 +114,13 @@ export default function BoxesPage() {
         </form>
       </div>
 
-      {newBoxQr && <QrDisplay dataUrl={newBoxQr.dataUrl} label={newBoxQr.code} />}
+      {newBoxQr && (
+        <QrDisplay
+          dataUrl={newBoxQr.dataUrl}
+          label={newBoxQr.code}
+          to={newBoxQr.to}
+        />
+      )}
     </div>
   );
 }

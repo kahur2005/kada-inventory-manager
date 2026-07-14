@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import apiClient from '../../api/client';
 import MapPicker from '../../components/MapPicker';
+import AddressSearch from '../../components/AddressSearch';
 
 export default function StoresPage() {
   const [stores, setStores] = useState([]);
@@ -47,10 +48,15 @@ export default function StoresPage() {
             <input id="store-name" value={name} onChange={(e) => setName(e.target.value)} required />
 
             <label htmlFor="store-address">Address</label>
-            <input id="store-address" value={address} onChange={(e) => setAddress(e.target.value)} required />
+            <AddressSearch
+              value={address}
+              onChange={setAddress}
+              onPick={setCoords}
+              placeholder="Search warehouse address..."
+            />
           </div>
           <div className="store-form-map">
-            <MapPicker coords={coords} onChange={setCoords} />
+            <MapPicker key={`${coords?.lat}-${coords?.lng}`} coords={coords} onChange={setCoords} />
           </div>
           <div className="store-form-actions">
             <button type="submit">Create store</button>

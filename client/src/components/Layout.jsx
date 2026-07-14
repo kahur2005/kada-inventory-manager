@@ -18,6 +18,7 @@ const NAV_ITEMS = {
     { to: '/warehouse/boxes', label: 'Boxes' },
     { to: '/warehouse/assign', label: 'Assign' },
     { to: '/warehouse/tracking', label: 'Tracking' },
+    { to: '/warehouse/shipments', label: 'Shipments' },
   ],
   store_admin: [
     { to: '/store/scan', label: 'Scan' },
@@ -26,7 +27,6 @@ const NAV_ITEMS = {
   ],
   driver: [
     { to: '/driver', label: 'My Deliveries' },
-    { to: '/driver/qr', label: 'My QR' },
   ],
 };
 

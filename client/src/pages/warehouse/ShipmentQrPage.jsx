@@ -1,18 +1,19 @@
 import { useState, useEffect } from "react";
 import apiClient from "../../api/client";
+import QrDisplay from "../../components/QrDisplay";
 
-export default function QRPage() {
+export default function ShipmentQrPage() {
   const [shipments, setShipments] = useState([]);
   const [items, setItems] = useState([]);
-  const [warehouses, setWarehouses] = useState([]);
   const [stores, setStores] = useState([]);
   const [selectedShipment, setSelectedShipment] = useState(null);
   const [qrImage, setQrImage] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [status, setStatus] = useState("");
+  const [search, setSearch] = useState("");
 
   const [form, setForm] = useState({
-    warehouse: "",
     destinationStore: "",
     items: [{ item: "", qty: 1 }],
   });
@@ -22,24 +23,14 @@ export default function QRPage() {
   }, []);
 
   async function loadData() {
-    const [shipRes, itemRes, whRes, storeRes] = await Promise.all([
+    const [shipRes, itemRes, storeRes] = await Promise.all([
       apiClient.get("/shipments"),
       apiClient.get("/items"),
-      apiClient.get("/warehouse-stock"),
-      apiClient.get("/store-stock"),
+      apiClient.get("/stores"),
     ]);
     setShipments(shipRes.data.shipments);
     setItems(itemRes.data.items);
-    const whMap = new Map();
-    whRes.data.stocks.forEach((s) => {
-      if (s.warehouse && !whMap.has(s.warehouse._id)) whMap.set(s.warehouse._id, s.warehouse);
-    });
-    setWarehouses(Array.from(whMap.values()));
-    const storeMap = new Map();
-    storeRes.data.stocks.forEach((s) => {
-      if (s.store && !storeMap.has(s.store._id)) storeMap.set(s.store._id, s.store);
-    });
-    setStores(Array.from(storeMap.values()));
+    setStores(storeRes.data.stores);
   }
 
   function addItemLine() {
@@ -68,11 +59,10 @@ export default function QRPage() {
         return;
       }
       await apiClient.post("/shipments", {
-        warehouse: form.warehouse,
         destinationStore: form.destinationStore,
         items: validItems,
       });
-      setForm({ warehouse: "", destinationStore: "", items: [{ item: "", qty: 1 }] });
+      setForm({ destinationStore: "", items: [{ item: "", qty: 1 }] });
       loadData();
     } catch (err) {
       setError(err.response?.data?.message || "Gagal membuat shipment");
@@ -109,6 +99,12 @@ export default function QRPage() {
     }
   }
 
+  const filteredShipments = shipments.filter((s) => {
+    const matchStatus = !status || s.status === status;
+    const matchSearch = !search || s.code.toLowerCase().includes(search.toLowerCase());
+    return matchStatus && matchSearch;
+  });
+
   return (
     <div>
       <h1>Shipment & QR Code</h1>
@@ -119,19 +115,6 @@ export default function QRPage() {
           {error && <p className="alert alert-danger">{error}</p>}
 
           <div className="form-row">
-            <div>
-              <label>Gudang Asal</label>
-              <select
-                value={form.warehouse}
-                onChange={(e) => setForm({ ...form, warehouse: e.target.value })}
-                required
-              >
-                <option value="">Pilih gudang</option>
-                {warehouses.map((w) => (
-                  <option key={w._id} value={w._id}>{w.name}</option>
-                ))}
-              </select>
-            </div>
             <div>
               <label>Toko Tujuan</label>
               <select
@@ -189,14 +172,34 @@ export default function QRPage() {
         <div className="card-header">
           <h3>Daftar Shipment</h3>
         </div>
-        {shipments.length === 0 ? (
+
+        <div className="filter-bar">
+          <div>
+            <label>Status</label>
+            <select value={status} onChange={(e) => setStatus(e.target.value)}>
+              <option value="">Semua</option>
+              <option value="CREATED">CREATED</option>
+              <option value="RECEIVED">RECEIVED</option>
+            </select>
+          </div>
+          <div>
+            <label>Cari</label>
+            <input
+              type="text"
+              placeholder="Kode shipment..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </div>
+        </div>
+
+        {filteredShipments.length === 0 ? (
           <p className="text-muted text-center">Belum ada shipment</p>
         ) : (
           <table>
             <thead>
               <tr>
                 <th>Kode</th>
-                <th>Gudang</th>
                 <th>Toko</th>
                 <th>Items</th>
                 <th>Status</th>
@@ -204,16 +207,15 @@ export default function QRPage() {
               </tr>
             </thead>
             <tbody>
-              {shipments.map((s) => (
+              {filteredShipments.map((s) => (
                 <tr key={s._id}>
                   <td className="font-mono font-bold">{s.code}</td>
-                  <td>{s.warehouse?.name}</td>
                   <td>{s.destinationStore?.name}</td>
                   <td>
                     {s.items.map((i) => `${i.qty}x ${i.item?.name}`).join(", ")}
                   </td>
                   <td>
-                    <span className={`badge badge-${s.status === "CREATED" ? "gray" : s.status === "RECEIVED" ? "green" : "yellow"}`}>
+                    <span className={`badge badge-${s.status === "CREATED" ? "gray" : "green"}`}>
                       {s.status}
                     </span>
                   </td>
@@ -231,10 +233,13 @@ export default function QRPage() {
       </div>
 
       {qrImage && selectedShipment && (
-        <div className="qr-card" style={{ marginTop: 24 }}>
-          <h3>QR Code: {selectedShipment.code}</h3>
-          <img src={qrImage} alt={selectedShipment.code} />
-          <p>Scan QR ini untuk menerima shipment di toko</p>
+        <div style={{ marginTop: 24 }}>
+          <QrDisplay
+            dataUrl={qrImage}
+            label={selectedShipment.code}
+            from={selectedShipment.warehouse?.name}
+            to={selectedShipment.destinationStore?.name}
+          />
         </div>
       )}
     </div>

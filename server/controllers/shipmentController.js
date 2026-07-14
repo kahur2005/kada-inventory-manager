@@ -1,5 +1,6 @@
 const Shipment = require("../models/Shipment");
-const Warehouse = require("../models/Warehouse");
+const StoreStock = require("../models/StoreStock");
+const HandoverLog = require("../models/HandoverLog");
 
 async function nextShipmentCode() {
   const count = await Shipment.countDocuments();
@@ -13,11 +14,9 @@ async function createShipment(req, res) {
     return res.status(400).json({ message: "destinationStore and at least one item are required" });
   }
 
-  // Cari warehouse yang terkait dengan user yang login
-  // Untuk sekarang pakai query param atau default
-  const warehouseId = req.body.warehouse;
+  const warehouseId = req.user.warehouse;
   if (!warehouseId) {
-    return res.status(400).json({ message: "warehouse is required" });
+    return res.status(400).json({ message: "You are not linked to a warehouse" });
   }
 
   const code = await nextShipmentCode();
@@ -26,6 +25,12 @@ async function createShipment(req, res) {
     warehouse: warehouseId,
     destinationStore,
     items,
+  });
+
+  await HandoverLog.create({
+    actor: req.user.id,
+    action: "BOX_PACKED",
+    meta: { code, shipmentId: shipment._id.toString(), destinationStore, items },
   });
 
   const populated = await shipment.populate([
@@ -41,6 +46,12 @@ async function listShipments(req, res) {
   const filter = {};
   if (req.query.warehouse) filter.warehouse = req.query.warehouse;
   if (req.query.status) filter.status = req.query.status;
+
+  if (req.user.role === "warehouse_admin") {
+    filter.warehouse = req.user.warehouse;
+  } else if (req.user.role === "store_admin") {
+    filter.destinationStore = req.user.store;
+  }
 
   const shipments = await Shipment.find(filter)
     .populate("warehouse", "name address")
@@ -82,10 +93,30 @@ async function scanShipment(req, res) {
     return res.status(400).json({ message: "Shipment already received" });
   }
 
+  if (shipment.destinationStore._id.toString() !== req.user.store) {
+    return res.status(403).json({ message: "This shipment is not destined for your store" });
+  }
+
+  for (const line of shipment.items) {
+    await StoreStock.findOneAndUpdate(
+      { store: req.user.store, item: line.item._id },
+      { $inc: { qty: line.qty }, $setOnInsert: { threshold: 0 } },
+      { upsert: true }
+    );
+  }
+
   shipment.status = "RECEIVED";
   await shipment.save();
 
-  res.json({ message: "Shipment received", shipment });
+  const items = shipment.items.map((line) => ({ name: line.item.name, qty: line.qty }));
+
+  await HandoverLog.create({
+    actor: req.user.id,
+    action: "DELIVERED",
+    meta: { shipmentId: shipment._id.toString(), code: shipment.code, items },
+  });
+
+  res.json({ message: "Shipment received", items, shipment });
 }
 
 module.exports = { createShipment, listShipments, getShipment, scanShipment };

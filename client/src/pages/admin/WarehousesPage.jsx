@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import apiClient from '../../api/client';
 import MapPicker from '../../components/MapPicker';
+import AddressSearch from '../../components/AddressSearch';
 
 export default function WarehousesPage() {
   const [warehouses, setWarehouses] = useState([]);
@@ -82,7 +83,12 @@ export default function WarehousesPage() {
             <input id="wh-name" value={name} onChange={(e) => setName(e.target.value)} required />
 
             <label htmlFor="wh-address">Address</label>
-            <input id="wh-address" value={address} onChange={(e) => setAddress(e.target.value)} required />
+            <AddressSearch
+              value={address}
+              onChange={setAddress}
+              onPick={setCoords}
+              placeholder="Search warehouse address..."
+            />
 
             <label htmlFor="wh-capacity">Capacity (m³)</label>
             <input id="wh-capacity" type="number" value={capacityM3} onChange={(e) => setCapacityM3(e.target.value)} />
@@ -119,7 +125,7 @@ export default function WarehousesPage() {
             </div>
           </div>
           <div className="warehouse-form-map">
-            <MapPicker coords={coords} onChange={setCoords} />
+            <MapPicker key={`${coords?.lat}-${coords?.lng}`} coords={coords} onChange={setCoords} />
           </div>
           <div className="warehouse-form-actions">
             <button type="submit">Create warehouse</button>
