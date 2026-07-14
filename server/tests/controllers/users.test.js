@@ -76,8 +76,31 @@ describe('PATCH /api/users/:id/role', () => {
 
     expect(res.status).toBe(200);
     expect(res.body.user.role).toBe('store_admin');
-    expect(res.body.user.store).toBe(store._id.toString());
+    expect(res.body.user.store).toEqual({
+      id: store._id.toString(),
+      name: store.name,
+      address: store.address,
+      coords: { lat: null, lng: null },
+    });
     expect(res.body.user.warehouse).toBeNull();
+  });
+
+  test('populates warehouse/store name+address on GET /api/users and PATCH .../role', async () => {
+    const { token } = await makeSuperadmin();
+    const wh = await Warehouse.create({ name: 'WH Populated', address: 'WH Address' });
+    const target = await User.create({ name: 'PopUser', email: 'popuser@example.com', passwordHash: 'x' });
+
+    const patchRes = await request(app)
+      .patch(`/api/users/${target._id}/role`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({ role: 'warehouse_admin', warehouse: wh._id.toString() });
+    expect(patchRes.status).toBe(200);
+    expect(patchRes.body.user.warehouse).toMatchObject({ id: wh._id.toString(), name: 'WH Populated', address: 'WH Address' });
+
+    const listRes = await request(app).get('/api/users?search=PopUser').set('Authorization', `Bearer ${token}`);
+    expect(listRes.status).toBe(200);
+    const found = listRes.body.users.find((u) => u.id === target._id.toString());
+    expect(found.warehouse).toMatchObject({ id: wh._id.toString(), name: 'WH Populated', address: 'WH Address' });
   });
 
   test('generates a driverQrToken exactly once when role becomes driver', async () => {
