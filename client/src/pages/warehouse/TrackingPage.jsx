@@ -45,7 +45,7 @@ export default function TrackingPage() {
           >
             <option value="">-- Pilih Driver --</option>
             {locations.drivers.map((d) => (
-              <option key={d.id} value={d.id}>{d.name} ({d.status})</option>
+              <option key={d.id} value={d.id}>{d.name}</option>
             ))}
           </select>
         </div>
