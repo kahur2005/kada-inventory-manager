@@ -41,6 +41,7 @@ describe('UsersPage', () => {
     await waitFor(() => screen.getByText('Ana'));
 
     fireEvent.change(screen.getByLabelText(/role for ana/i), { target: { value: 'driver' } });
+    fireEvent.click(screen.getByText('Save'));
 
     await waitFor(() => expect(apiClient.patch).toHaveBeenCalledWith('/users/1/role', { role: 'driver' }));
   });

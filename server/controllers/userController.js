@@ -41,6 +41,8 @@ async function listUsers(req, res) {
 
   const [users, total] = await Promise.all([
     User.find(filter)
+      .populate('warehouse', 'name address coords')
+      .populate('store', 'name address coords')
       .sort({ createdAt: -1 })
       .skip((page - 1) * limit)
       .limit(limit),
@@ -101,6 +103,10 @@ async function updateRole(req, res) {
     user.driverQrToken = uuidv4();
   }
   await user.save();
+  await user.populate([
+    { path: 'warehouse', select: 'name address coords' },
+    { path: 'store', select: 'name address coords' },
+  ]);
   res.json({ user: toPublicUser(user) });
 }
 

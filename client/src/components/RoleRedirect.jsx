@@ -2,7 +2,7 @@ import { Navigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 // Plans 2-4 change these targets as each role's real landing screen ships.
-export const ROLE_HOME = {
+const ROLE_HOME = {
   superadmin: '/dashboard',
   warehouse_admin: '/warehouse/alerts',
   store_admin: '/store/scan',

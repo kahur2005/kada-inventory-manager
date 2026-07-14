@@ -34,7 +34,9 @@ describe('HistoryPage', () => {
     await waitFor(() => expect(screen.getByText('BX-0001')).toBeInTheDocument());
     expect(apiClient.get).toHaveBeenCalledWith('/boxes', { params: { status: 'DELIVERED', search: '', page: 1, limit: 10 } });
     expect(apiClient.get).toHaveBeenCalledWith('/logs', { params: { page: 1, limit: 20 } });
-    expect(screen.getByText(/3 → 9/)).toBeInTheDocument();
+    expect(screen.getByText('BX-0001')).toBeInTheDocument();
+    expect(screen.getByText('3')).toBeInTheDocument();
+    expect(screen.getByText('9')).toBeInTheDocument();
     expect(screen.queryByText(new Date('2026-07-13T11:00:00.000Z').toLocaleString())).not.toBeInTheDocument();
   });
 });

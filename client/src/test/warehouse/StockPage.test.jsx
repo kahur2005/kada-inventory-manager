@@ -13,7 +13,7 @@ describe('Warehouse StockPage', () => {
   });
 
   test('shows own warehouse stock and a tab per linked store', async () => {
-    apiClient.get = vi.fn((url, config) => {
+    apiClient.get = vi.fn((url) => {
       if (url === '/warehouses') {
         return Promise.resolve({ data: { warehouses: [{ _id: 'wh1', name: 'WH A', stores: [{ _id: 'store1', name: 'Store 1' }] }] } });
       }

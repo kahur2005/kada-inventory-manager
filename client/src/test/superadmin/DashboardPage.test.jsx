@@ -22,8 +22,10 @@ describe('DashboardPage', () => {
     render(<DashboardPage />);
 
     await waitFor(() => expect(screen.getByText(/42%/)).toBeInTheDocument());
-    expect(screen.getByText(/delivered: 5/i)).toBeInTheDocument();
-    expect(screen.getByText(/low stock alerts: 3/i)).toBeInTheDocument();
+    expect(screen.getByText('5')).toBeInTheDocument();
+    expect(screen.getByText('Delivered')).toBeInTheDocument();
+    expect(screen.getByText('3')).toBeInTheDocument();
+    expect(screen.getByText('Low Stock Alerts')).toBeInTheDocument();
     expect(screen.getByText(/BOX_PACKED/)).toBeInTheDocument();
   });
 });

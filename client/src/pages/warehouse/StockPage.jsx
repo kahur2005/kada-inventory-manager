@@ -31,64 +31,105 @@ export default function StockPage() {
     loadStoreStock(activeStoreId);
   }
 
+  const activeStore = linkedStores.find((s) => s._id === activeStoreId);
+
   return (
     <div>
       <h1>Warehouse Stock</h1>
-      <table>
-        <thead>
-          <tr>
-            <th>Item</th>
-            <th>Qty</th>
-          </tr>
-        </thead>
-        <tbody>
-          {warehouseStock.map((row) => (
-            <tr key={row._id}>
-              <td>{row.item?.name}</td>
-              <td>{row.qty}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
 
-      <h2>Linked stores</h2>
-      <div>
-        {linkedStores.map((store) => (
-          <button key={store._id} onClick={() => loadStoreStock(store._id)}>
-            {store.name}
-          </button>
-        ))}
+      <div className="stock-layout">
+        <div className="stock-layout-left">
+          <div className="card">
+            <div className="card-header">
+              <h3>Linked stores</h3>
+            </div>
+            {linkedStores.length === 0 ? (
+              <p className="text-muted">No linked stores</p>
+            ) : (
+              <div className="store-btn-list">
+                {linkedStores.map((store) => (
+                  <button
+                    key={store._id}
+                    className={`store-btn ${activeStoreId === store._id ? 'store-btn-active' : ''}`}
+                    onClick={() => loadStoreStock(store._id)}
+                  >
+                    {store.name}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="card">
+            <div className="card-header">
+              <h3>Stock items</h3>
+            </div>
+            <table>
+              <thead>
+                <tr>
+                  <th>Item</th>
+                  <th>Qty</th>
+                </tr>
+              </thead>
+              <tbody>
+                {warehouseStock.length === 0 ? (
+                  <tr><td colSpan="2" className="text-muted text-center">No stock data</td></tr>
+                ) : warehouseStock.map((row) => (
+                  <tr key={row._id}>
+                    <td className="font-bold">{row.item?.name}</td>
+                    <td>{row.qty}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div className="stock-layout-right">
+          {activeStoreId ? (
+            <div className="card">
+              <div className="card-header">
+                <h3>Store stock: {activeStore?.name}</h3>
+              </div>
+              <table>
+                <thead>
+                  <tr>
+                    <th>Item</th>
+                    <th>Qty</th>
+                    <th>Threshold</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {storeStock.length === 0 ? (
+                    <tr><td colSpan="3" className="text-muted text-center">No stock data for this store</td></tr>
+                  ) : storeStock.map((row) => (
+                    <tr key={row._id} className={row.belowThreshold ? 'row-low-stock' : ''}>
+                      <td className="font-bold">{row.item?.name}</td>
+                      <td>{row.qty}</td>
+                      <td>
+                        <label htmlFor={`threshold-${row._id}`} className="sr-only">{`Threshold for ${row.item?.name}`}</label>
+                        <input
+                          id={`threshold-${row._id}`}
+                          aria-label={`Threshold for ${row.item?.name}`}
+                          type="number"
+                          defaultValue={row.threshold}
+                          onBlur={(e) => handleThresholdChange(row, e.target.value)}
+                        />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <div className="card">
+              <div className="empty" style={{ padding: '40px 0' }}>
+                <p className="text-muted">Pilih toko untuk melihat stock</p>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
-
-      {activeStoreId && (
-        <table>
-          <thead>
-            <tr>
-              <th>Item</th>
-              <th>Qty</th>
-              <th>Threshold</th>
-            </tr>
-          </thead>
-          <tbody>
-            {storeStock.map((row) => (
-              <tr key={row._id} style={row.belowThreshold ? { background: '#fdd' } : undefined}>
-                <td>{row.item?.name}</td>
-                <td>{row.qty}</td>
-                <td>
-                  <label htmlFor={`threshold-${row._id}`}>{`Threshold for ${row.item?.name}`}</label>
-                  <input
-                    id={`threshold-${row._id}`}
-                    aria-label={`Threshold for ${row.item?.name}`}
-                    type="number"
-                    defaultValue={row.threshold}
-                    onBlur={(e) => handleThresholdChange(row, e.target.value)}
-                  />
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
     </div>
   );
 }

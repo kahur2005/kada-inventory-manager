@@ -43,17 +43,22 @@ export default function BoxesPage() {
     <div>
       <h1>Boxes</h1>
 
-      <label htmlFor="box-status">Status</label>
-      <select id="box-status" value={status} onChange={(e) => setStatus(e.target.value)}>
-        <option value="">All</option>
-        <option value="PACKED">PACKED</option>
-        <option value="ASSIGNED">ASSIGNED</option>
-        <option value="IN_TRANSIT">IN_TRANSIT</option>
-        <option value="DELIVERED">DELIVERED</option>
-      </select>
-
-      <label htmlFor="box-search">Search code</label>
-      <input id="box-search" value={search} onChange={(e) => setSearch(e.target.value)} />
+      <div className="filter-bar">
+        <div>
+          <label htmlFor="box-status">Status</label>
+          <select id="box-status" value={status} onChange={(e) => setStatus(e.target.value)}>
+            <option value="">All</option>
+            <option value="PACKED">PACKED</option>
+            <option value="ASSIGNED">ASSIGNED</option>
+            <option value="IN_TRANSIT">IN_TRANSIT</option>
+            <option value="DELIVERED">DELIVERED</option>
+          </select>
+        </div>
+        <div>
+          <label htmlFor="box-search">Search code</label>
+          <input id="box-search" value={search} onChange={(e) => setSearch(e.target.value)} />
+        </div>
+      </div>
 
       <table>
         <thead>
@@ -66,16 +71,17 @@ export default function BoxesPage() {
         <tbody>
           {boxes.map((box) => (
             <tr key={box._id}>
-              <td>{box.code}</td>
-              <td>{box.status}</td>
+              <td className="font-mono">{box.code}</td>
+              <td><span className={`badge badge-${box.status}`}>{box.status}</span></td>
               <td>{box.destinationStore?.name}</td>
             </tr>
           ))}
         </tbody>
       </table>
 
-      <form onSubmit={handleCreate}>
-        <h2>Create box</h2>
+      <div className="form-card">
+        <form onSubmit={handleCreate}>
+          <h2>Create box</h2>
         <label htmlFor="box-store">Destination store</label>
         <select id="box-store" value={destinationStore} onChange={(e) => setDestinationStore(e.target.value)} required>
           <option value="">Select a store</option>
@@ -100,7 +106,8 @@ export default function BoxesPage() {
         <input id="box-qty" type="number" min="1" value={lineQty} onChange={(e) => setLineQty(e.target.value)} required />
 
         <button type="submit">Create box</button>
-      </form>
+        </form>
+      </div>
 
       {newBoxQr && <QrDisplay dataUrl={newBoxQr.dataUrl} label={newBoxQr.code} />}
     </div>
