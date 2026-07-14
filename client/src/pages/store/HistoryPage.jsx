@@ -3,9 +3,13 @@ import apiClient from '../../api/client';
 
 export default function HistoryPage() {
   const [boxes, setBoxes] = useState([]);
+  const [adjustments, setAdjustments] = useState([]);
 
   useEffect(() => {
     apiClient.get('/boxes', { params: { status: 'DELIVERED', search: '', page: 1, limit: 10 } }).then((res) => setBoxes(res.data.boxes));
+    apiClient.get('/logs', { params: { page: 1, limit: 20 } }).then((res) =>
+      setAdjustments(res.data.logs.filter((log) => log.action === 'STOCK_ADJUSTED'))
+    );
   }, []);
 
   return (
@@ -25,6 +29,26 @@ export default function HistoryPage() {
               <td>{box.code}</td>
               <td>{box.items.map((line) => `${line.qty}× ${line.item?.name}`).join(', ')}</td>
               <td>{box.assignedDriver?.name}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+
+      <h2>Opname Adjustment Log</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>When</th>
+            <th>Change</th>
+          </tr>
+        </thead>
+        <tbody>
+          {adjustments.map((log) => (
+            <tr key={log._id}>
+              <td>{new Date(log.timestamp).toLocaleString()}</td>
+              <td>
+                {log.meta.oldQty} → {log.meta.newQty}
+              </td>
             </tr>
           ))}
         </tbody>
