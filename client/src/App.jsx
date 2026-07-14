@@ -19,7 +19,7 @@ import TrackingPage from './pages/warehouse/TrackingPage';
 import ScanPage from './pages/store/ScanPage';
 import StoreStockPage from './pages/store/StockPage';
 import HistoryPage from './pages/store/HistoryPage';
-import RoleHomePlaceholder from './pages/RoleHomePlaceholder';
+import DeliveriesPage from './pages/driver/DeliveriesPage';
 import DashboardPage from './pages/superadmin/DashboardPage';
 
 export default function App() {
@@ -60,7 +60,7 @@ export default function App() {
           </Route>
 
           <Route element={<ProtectedRoute allowedRoles={['driver']} />}>
-            <Route path="/driver" element={<RoleHomePlaceholder label="Driver" />} />
+            <Route path="/driver" element={<DeliveriesPage />} />
           </Route>
         </Route>
       </Routes>

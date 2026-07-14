@@ -60,6 +60,7 @@ describe('GET /api/boxes', () => {
     const res = await request(app).get('/api/boxes').set('Authorization', `Bearer ${signToken(storeAdmin)}`);
     expect(res.body.boxes).toHaveLength(1);
     expect(res.body.boxes[0].code).toBe('BX-0005');
+    expect(res.body.boxes[0].destinationStore).toHaveProperty('name');
   });
 
   test('filters by status and searches by code', async () => {

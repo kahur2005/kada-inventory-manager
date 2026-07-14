@@ -94,7 +94,7 @@ async function listBoxes(req, res) {
 
   const [boxes, total] = await Promise.all([
     Box.find(filter)
-      .populate('destinationStore', 'name address')
+      .populate('destinationStore', 'name address coords')
       .populate('assignedDriver', 'name')
       .populate('items.item', 'name sku unit')
       .sort({ createdAt: -1 })
