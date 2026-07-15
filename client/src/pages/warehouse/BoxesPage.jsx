@@ -113,14 +113,16 @@ export default function BoxesPage() {
             ))}
           </select>
 
-          <label>Items</label>
+          <label htmlFor={`box-item-0`}>Items</label>
           {lineItems.map((line, idx) => (
             <div key={idx} className="flex gap-sm mb-sm">
               <select
+                id={`box-item-${idx}`}
                 value={line.item}
                 onChange={(e) => updateItemLine(idx, 'item', e.target.value)}
                 required
                 style={{ flex: 2 }}
+                aria-label="Item"
               >
                 <option value="">Select an item</option>
                 {items.map((item) => (
@@ -135,6 +137,7 @@ export default function BoxesPage() {
                 value={line.qty}
                 onChange={(e) => updateItemLine(idx, 'qty', parseInt(e.target.value) || 1)}
                 style={{ width: 80 }}
+                aria-label="Qty"
               />
               {lineItems.length > 1 && (
                 <button type="button" className="btn-danger btn-sm" onClick={() => removeItemLine(idx)}>

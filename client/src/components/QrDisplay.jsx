@@ -79,7 +79,9 @@ export default function QrDisplay({ dataUrl, label, companyName = 'PT PecutAI In
       </body>
       </html>
     `);
-    win.document.close();
+    if (win && win.document && typeof win.document.close === 'function') {
+      win.document.close();
+    }
   }
 
   return (

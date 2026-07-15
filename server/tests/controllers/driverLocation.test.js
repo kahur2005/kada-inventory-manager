@@ -40,8 +40,8 @@ describe('GET /api/driver-locations', () => {
     const driverOutOfScope = await User.create({ name: 'D4', email: 'd4@example.com', passwordHash: 'x', role: 'driver' });
     await Box.create({ code: 'BX-DL1', qrToken: 't1', warehouse: wh1._id, destinationStore: store._id, items: [{ item: item._id, qty: 1 }], status: 'ASSIGNED', assignedDriver: driverInScope._id });
     await Box.create({ code: 'BX-DL2', qrToken: 't2', warehouse: wh2._id, destinationStore: store._id, items: [{ item: item._id, qty: 1 }], status: 'ASSIGNED', assignedDriver: driverOutOfScope._id });
-    await DriverLocation.create({ driver: driverInScope._id, coords: { lat: 1, lng: 1 } });
-    await DriverLocation.create({ driver: driverOutOfScope._id, coords: { lat: 2, lng: 2 } });
+    await DriverLocation.create({ driver: driverInScope._id, name: 'D3', coords: { lat: 1, lng: 1 } });
+    await DriverLocation.create({ driver: driverOutOfScope._id, name: 'D4', coords: { lat: 2, lng: 2 } });
 
     const whAdmin = await User.create({ name: 'WA', email: 'wa@example.com', passwordHash: 'x', role: 'warehouse_admin', warehouse: wh1._id });
     const res = await request(app).get('/api/driver-locations').set('Authorization', `Bearer ${signToken(whAdmin)}`);
@@ -53,7 +53,7 @@ describe('GET /api/driver-locations', () => {
 
   test('superadmin sees all driver locations', async () => {
     const driver = await User.create({ name: 'D5', email: 'd5@example.com', passwordHash: 'x', role: 'driver' });
-    await DriverLocation.create({ driver: driver._id, coords: { lat: 1, lng: 1 } });
+    await DriverLocation.create({ driver: driver._id, name: 'D5', coords: { lat: 1, lng: 1 } });
     const admin = await User.create({ name: 'S', email: 's@example.com', passwordHash: 'x', role: 'superadmin' });
 
     const res = await request(app).get('/api/driver-locations').set('Authorization', `Bearer ${signToken(admin)}`);

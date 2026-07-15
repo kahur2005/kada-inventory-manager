@@ -23,9 +23,7 @@ app.use('/api/scan', require('./routes/scanRoutes'));
 app.use('/api', require('./routes/driverLocationRoutes'));
 app.use('/api/dashboard', require('./routes/dashboardRoutes'));
 app.use('/api/logs', require('./routes/logsRoutes'));
-app.use('/api/shipments', require('./routes/shipmentRoutes'));
 app.use('/api/tracking', require('./routes/trackingRoutes'));
-app.use('/api/qr', require('./routes/qrRoutes'));
 
 app.use(notFound);
 app.use(errorHandler);
