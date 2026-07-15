@@ -1,0 +1,59 @@
+flowchart TD
+    A[Pengguna Akses Website] --> B{Sudah Login?}
+    B -->|Belum - Register| C[Isi Form Register]
+    C --> D[Akun Dibuat - Role: unassigned]
+    D --> E[Redirect /pending - Menunggu Penugasan]
+    E --> F[Superadmin Assign Role]
+    F --> G[Redirect ke Dashboard sesuai Role]
+
+    B -->|Login| H[Isi Form Login]
+    H --> I{Login Berhasil?}
+    I -->|Ya| G
+    I -->|Tidak| J[Error Message]
+    J --> H
+
+    G -->|Superadmin| K[/dashboard - Stat Cards + Map Global]
+    G -->|Warehouse Admin| L[/warehouse/alerts - Stok Rendah]
+    G -->|Store Admin| M[/store/scan - Scan QR]
+    G -->|Driver| N[/driver - Pengiriman Aktif]
+
+    L --> O{Ada Stok di Bawah Threshold?}
+    O -->|Ya| P[Klik Pack a Box]
+    O -->|Tidak| Q[Dashboard Normal]
+
+    P --> R[/warehouse/boxes - Pilih Toko + Item]
+    R --> S[Submit - Stok Gudang Berkurang]
+    S --> T[QR Code Box Dihasilkan]
+    T --> U[Status Box: PACKED]
+
+    U --> V[/warehouse/assign - Pilih Box]
+    V --> W{Metode Assign?}
+    W -->|Scan QR| X[Scan QR Driver via Kamera]
+    W -->|Manual| Y[Pilih Driver dari Dropdown]
+    X --> Z[Status Box: ASSIGNED]
+    Y --> Z
+
+    Z --> AA[Driver Buka /driver di Mobile]
+    AA --> AB[Lihat Box Ditugaskan]
+    AB --> AC[Klik Pick Up]
+    AC --> AD[Status Box: IN_TRANSIT]
+    AD --> AE[Aktifkan GPS Tracking]
+    AE --> AF[Lokasi Dikirim Setiap 45 detik]
+
+    AF --> AG[Driver dalam Perjalanan]
+    AG --> AH[Warehouse Admin Pantau di /warehouse/tracking]
+    AG --> AI[Superadmin Pantau di /dashboard]
+
+    AG --> AJ[Store Admin Buka /store/scan]
+    AJ --> AK[Scan QR Box via Kamera]
+    AK --> AL{Validasi QR + Status + Tujuan?}
+    AL -->|Valid| AM[Stok Toko Bertambah Otomatis]
+    AL -->|Invalid| AN[Error - Coba Lagi]
+    AM --> AO[Status Box: DELIVERED]
+    AO --> AP[Handover Log Tercatat]
+
+    AP --> AQ[Store Admin Buka /store/stock]
+    AQ --> AR[Toggle Opname Mode]
+    AR --> AS[Edit Kuantitas Stok]
+    AS --> AT[Simpan Perubahan]
+    AT --> AU[Audit Log Tercatat]
