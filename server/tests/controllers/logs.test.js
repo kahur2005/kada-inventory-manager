@@ -104,4 +104,32 @@ describe('GET /api/logs', () => {
     expect(res.status).toBe(400);
     expect(res.body.message).toBeDefined();
   });
+
+  test('filters by from/to timestamp range, inclusive of the to day', async () => {
+    const admin = await User.create({ name: 'S7', email: 's7@example.com', passwordHash: 'x', role: 'superadmin' });
+    await HandoverLog.create({ actor: admin._id, action: 'STOCK_ADJUSTED', meta: {}, timestamp: new Date('2026-01-10T10:00:00Z') });
+    await HandoverLog.create({ actor: admin._id, action: 'STOCK_ADJUSTED', meta: {}, timestamp: new Date('2026-02-10T10:00:00Z') });
+    await HandoverLog.create({ actor: admin._id, action: 'STOCK_ADJUSTED', meta: {}, timestamp: new Date('2026-02-20T23:30:00Z') });
+    await HandoverLog.create({ actor: admin._id, action: 'STOCK_ADJUSTED', meta: {}, timestamp: new Date('2026-03-10T10:00:00Z') });
+
+    const res = await request(app)
+      .get('/api/logs?from=2026-02-01&to=2026-02-20')
+      .set('Authorization', `Bearer ${signToken(admin)}`);
+    expect(res.status).toBe(200);
+    expect(res.body.logs).toHaveLength(2);
+  });
+
+  test('returns 400 for an unparseable from date', async () => {
+    const admin = await User.create({ name: 'S8', email: 's8@example.com', passwordHash: 'x', role: 'superadmin' });
+    const res = await request(app).get('/api/logs?from=not-a-date').set('Authorization', `Bearer ${signToken(admin)}`);
+    expect(res.status).toBe(400);
+    expect(res.body.message).toBeDefined();
+  });
+
+  test('returns 400 for an unparseable to date', async () => {
+    const admin = await User.create({ name: 'S9', email: 's9@example.com', passwordHash: 'x', role: 'superadmin' });
+    const res = await request(app).get('/api/logs?to=not-a-date').set('Authorization', `Bearer ${signToken(admin)}`);
+    expect(res.status).toBe(400);
+    expect(res.body.message).toBeDefined();
+  });
 });

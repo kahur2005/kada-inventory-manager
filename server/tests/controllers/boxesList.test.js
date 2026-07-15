@@ -74,6 +74,39 @@ describe('GET /api/boxes', () => {
     expect(res.body.boxes).toHaveLength(1);
     expect(res.body.boxes[0].code).toBe('BX-0008');
   });
+
+  test('filters by from/to createdAt range', async () => {
+    const admin = await User.create({ name: 'SD', email: 'sd@example.com', passwordHash: 'x', role: 'superadmin' });
+    const wh = await Warehouse.create({ name: 'WHD', address: 'x' });
+    const store = await Store.create({ name: 'SD1', address: 'x' });
+    const oldBox = await makeBox({ warehouse: wh, store, code: 'BX-0100' });
+    const newBox = await makeBox({ warehouse: wh, store, code: 'BX-0101' });
+    await Box.collection.updateOne({ _id: oldBox._id }, { $set: { createdAt: new Date('2026-01-05T10:00:00Z') } });
+    await Box.collection.updateOne({ _id: newBox._id }, { $set: { createdAt: new Date('2026-03-05T10:00:00Z') } });
+
+    const res = await request(app)
+      .get('/api/boxes?from=2026-02-01&to=2026-03-31')
+      .set('Authorization', `Bearer ${signToken(admin)}`);
+    expect(res.status).toBe(200);
+    expect(res.body.boxes).toHaveLength(1);
+    expect(res.body.boxes[0].code).toBe('BX-0101');
+  });
+
+  test('returns 400 for an unparseable date param', async () => {
+    const admin = await User.create({ name: 'SD2', email: 'sd2@example.com', passwordHash: 'x', role: 'superadmin' });
+    const res = await request(app).get('/api/boxes?from=garbage').set('Authorization', `Bearer ${signToken(admin)}`);
+    expect(res.status).toBe(400);
+  });
+
+  test('boxes include their createdAt', async () => {
+    const admin = await User.create({ name: 'SD3', email: 'sd3@example.com', passwordHash: 'x', role: 'superadmin' });
+    const wh = await Warehouse.create({ name: 'WHD3', address: 'x' });
+    const store = await Store.create({ name: 'SD3s', address: 'x' });
+    await makeBox({ warehouse: wh, store, code: 'BX-0102' });
+
+    const res = await request(app).get('/api/boxes').set('Authorization', `Bearer ${signToken(admin)}`);
+    expect(res.body.boxes[0].createdAt).toBeDefined();
+  });
 });
 
 describe('GET /api/boxes/:id/qr', () => {

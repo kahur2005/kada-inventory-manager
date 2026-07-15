@@ -6,21 +6,11 @@ import QrScanner from '../../components/QrScanner';
 export default function ScanPage() {
   const [manualCode, setManualCode] = useState('');
 
-  async function deliverBox(token) {
+  async function deliverBox(payload) {
     try {
-      const res = await apiClient.post('/scan/box', { token });
+      const res = await apiClient.post('/scan/box', payload);
       const itemsList = res.data.items.map((i) => `${i.qty}× ${i.name}`).join(', ') || 'no items';
       await Swal.fire({ icon: 'success', title: 'Box delivered', text: itemsList });
-    } catch (err) {
-      await Swal.fire({ icon: 'error', title: 'Scan failed', text: err.response?.data?.message || 'Something went wrong' });
-    }
-  }
-
-  async function deliverShipment(code) {
-    try {
-      const res = await apiClient.post('/shipments/scan', { code });
-      const itemsList = res.data.items.map((i) => `${i.qty}× ${i.name}`).join(', ') || 'no items';
-      await Swal.fire({ icon: 'success', title: 'Shipment received', text: itemsList });
     } catch (err) {
       await Swal.fire({ icon: 'error', title: 'Scan failed', text: err.response?.data?.message || 'Something went wrong' });
     }
@@ -35,9 +25,7 @@ export default function ScanPage() {
       return;
     }
     if (parsed.type === 'box') {
-      deliverBox(parsed.token);
-    } else if (parsed.type === 'shipment') {
-      deliverShipment(parsed.code);
+      deliverBox({ token: parsed.token });
     } else {
       await Swal.fire({ icon: 'error', title: 'That QR is not a recognized code' });
     }
@@ -45,7 +33,7 @@ export default function ScanPage() {
 
   function handleManualSubmit(e) {
     e.preventDefault();
-    deliverShipment(manualCode);
+    deliverBox({ code: manualCode });
     setManualCode('');
   }
 
@@ -61,7 +49,7 @@ export default function ScanPage() {
 
       <div className="form-card">
         <form onSubmit={handleManualSubmit}>
-          <label htmlFor="manual-box-code">Shipment code (camera fallback)</label>
+          <label htmlFor="manual-box-code">Box code (camera fallback)</label>
           <input id="manual-box-code" value={manualCode} onChange={(e) => setManualCode(e.target.value)} required />
           <div className="form-actions">
             <button type="submit">Submit code</button>

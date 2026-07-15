@@ -81,12 +81,13 @@ describe('WarehousesPage', () => {
     fireEvent.change(screen.getByLabelText(/address/i), { target: { value: 'Jl. Y' } });
     fireEvent.click(screen.getByRole('button', { name: /mock-map/i }));
 
-    const storesSelect = screen.getByLabelText(/linked stores/i);
-    const option1 = screen.getByRole('option', { name: 'Store 1' });
-    const option2 = screen.getByRole('option', { name: 'Store 2' });
-    option1.selected = true;
-    option2.selected = true;
-    fireEvent.change(storesSelect);
+    const storesSelectTrigger = screen.getByRole('button', { name: /linked stores/i });
+    fireEvent.click(storesSelectTrigger);
+    
+    const store1Checkbox = screen.getByLabelText('Store 1');
+    const store2Checkbox = screen.getByLabelText('Store 2');
+    fireEvent.click(store1Checkbox);
+    fireEvent.click(store2Checkbox);
 
     fireEvent.click(screen.getByRole('button', { name: /create warehouse/i }));
 

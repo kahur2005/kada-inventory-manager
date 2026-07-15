@@ -94,6 +94,27 @@ describe('POST /api/scan/driver', () => {
       .send({ token: 'drv-token-mal', boxIds: ['not-a-valid-objectid'] });
     expect(res.status).toBe(400);
   });
+
+  test('response includes assigned box codes and destinations', async () => {
+    const wh = await Warehouse.create({ name: 'WH-M', address: 'x' });
+    const store = await Store.create({ name: 'Toko Manifest', address: 'Jl. Mawar 1' });
+    const whAdmin = await User.create({ name: 'WA-M', email: 'wam@example.com', passwordHash: 'x', role: 'warehouse_admin', warehouse: wh._id });
+    await User.create({ name: 'D-M', email: 'dm@example.com', passwordHash: 'x', role: 'driver', driverQrToken: 'drv-token-m' });
+    const box = await makePackedBox(wh, store, 'BX-M1');
+
+    const res = await request(app)
+      .post('/api/scan/driver')
+      .set('Authorization', `Bearer ${signToken(whAdmin)}`)
+      .send({ token: 'drv-token-m', boxIds: [box._id.toString()] });
+
+    expect(res.status).toBe(200);
+    expect(res.body.boxes).toHaveLength(1);
+    expect(res.body.boxes[0]).toEqual({
+      id: box._id.toString(),
+      code: 'BX-M1',
+      destinationStore: { name: 'Toko Manifest', address: 'Jl. Mawar 1' },
+    });
+  });
 });
 
 describe('POST /api/boxes/:id/assign (manual fallback)', () => {

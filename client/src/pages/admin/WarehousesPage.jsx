@@ -149,9 +149,10 @@ export default function WarehousesPage() {
               <label htmlFor={`edit-wh-area-${wh._id}`}>Area (m²)</label>
               <input id={`edit-wh-area-${wh._id}`} type="number" value={editAreaM2} onChange={(e) => setEditAreaM2(e.target.value)} />
 
-              <label>Linked stores</label>
+              <label htmlFor={`linked-stores-edit-${wh._id}`}>Linked stores</label>
               <div className="custom-dropdown" ref={editDropdownRef}>
                 <button
+                  id={`linked-stores-edit-${wh._id}`}
                   type="button"
                   className="custom-dropdown-trigger"
                   onClick={() => setEditDropdownOpen((o) => !o)}
@@ -221,9 +222,10 @@ export default function WarehousesPage() {
             <label htmlFor="wh-area">Area (m²)</label>
             <input id="wh-area" type="number" value={areaM2} onChange={(e) => setAreaM2(e.target.value)} />
 
-            <label>Linked stores</label>
+            <label htmlFor="linked-stores-create">Linked stores</label>
             <div className="custom-dropdown" ref={dropdownRef}>
               <button
+                id="linked-stores-create"
                 type="button"
                 className="custom-dropdown-trigger"
                 onClick={() => setDropdownOpen((o) => !o)}
