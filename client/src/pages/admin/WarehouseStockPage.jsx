@@ -51,38 +51,56 @@ export default function WarehouseStockPage() {
         ))}
       </select>
 
-      <form onSubmit={handleAdd}>
-        <label htmlFor="wsp-item">Item</label>
-        <select id="wsp-item" value={itemId} onChange={(e) => setItemId(e.target.value)}>
-          {items.map((item) => (
-            <option key={item._id} value={item._id}>
-              {item.name}
-            </option>
-          ))}
-        </select>
+      <div className="warehouse-stock-layout">
+        <div className="warehouse-stock-layout-form">
+          <div className="card">
+            <div className="card-header">
+              <h3>Add Stock</h3>
+            </div>
+            <form onSubmit={handleAdd}>
+              <label htmlFor="wsp-item">Item</label>
+              <select id="wsp-item" value={itemId} onChange={(e) => setItemId(e.target.value)}>
+                {items.map((item) => (
+                  <option key={item._id} value={item._id}>
+                    {item.name}
+                  </option>
+                ))}
+              </select>
 
-        <label htmlFor="wsp-qty">Quantity</label>
-        <input id="wsp-qty" type="number" min="1" value={qty} onChange={(e) => setQty(e.target.value)} required />
+              <label htmlFor="wsp-qty">Quantity</label>
+              <input id="wsp-qty" type="number" min="1" value={qty} onChange={(e) => setQty(e.target.value)} required />
 
-        <button type="submit">Add stock</button>
-      </form>
+              <button type="submit">Add stock</button>
+            </form>
+          </div>
+        </div>
 
-      <table>
-        <thead>
-          <tr>
-            <th>Item</th>
-            <th>Qty</th>
-          </tr>
-        </thead>
-        <tbody>
-          {stock.map((row) => (
-            <tr key={row._id}>
-              <td>{row.item?.name}</td>
-              <td>{row.qty}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+        <div className="warehouse-stock-layout-table">
+          <div className="card">
+            <div className="card-header">
+              <h3>Stock List</h3>
+            </div>
+            <table>
+              <thead>
+                <tr>
+                  <th>Item</th>
+                  <th>Qty</th>
+                </tr>
+              </thead>
+              <tbody>
+                {stock.length === 0 ? (
+                  <tr><td colSpan="2" className="text-muted text-center">No stock data</td></tr>
+                ) : stock.map((row) => (
+                  <tr key={row._id}>
+                    <td className="font-bold">{row.item?.name}</td>
+                    <td>{row.qty}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

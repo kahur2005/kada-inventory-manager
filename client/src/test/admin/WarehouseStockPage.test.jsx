@@ -9,7 +9,7 @@ describe('WarehouseStockPage', () => {
   beforeEach(() => vi.resetAllMocks());
 
   test('adds stock for the selected warehouse and item', async () => {
-    apiClient.get = vi.fn((url, config) => {
+    apiClient.get = vi.fn((url) => {
       if (url === '/warehouses') return Promise.resolve({ data: { warehouses: [{ _id: 'wh1', name: 'WH A' }] } });
       if (url === '/items') return Promise.resolve({ data: { items: [{ _id: 'it1', name: 'Indomie' }] } });
       if (url === '/warehouse-stock') return Promise.resolve({ data: { warehouseStock: [] } });

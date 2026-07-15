@@ -44,50 +44,62 @@ export default function ItemsPage() {
   return (
     <div>
       <h1>Items</h1>
-      <form onSubmit={handleCreate}>
-        <label htmlFor="item-name">Name</label>
-        <input id="item-name" value={name} onChange={(e) => setName(e.target.value)} required />
 
-        <label htmlFor="item-sku">SKU</label>
-        <input id="item-sku" value={sku} onChange={(e) => setSku(e.target.value)} required />
+      <div className="items-layout">
+        <div className="items-layout-form">
+          <div className="card">
+            <div className="card-header">
+              <h3>Add Item</h3>
+            </div>
+            <form onSubmit={handleCreate}>
+              <label htmlFor="item-name">Name</label>
+              <input id="item-name" value={name} onChange={(e) => setName(e.target.value)} required />
 
-        <label htmlFor="item-unit">Unit</label>
-        <select id="item-unit" value={unit} onChange={(e) => setUnit(e.target.value)}>
-          <option value="pcs">pcs</option>
-          <option value="box">box</option>
-          <option value="kg">kg</option>
-        </select>
+              <label htmlFor="item-sku">SKU</label>
+              <input id="item-sku" value={sku} onChange={(e) => setSku(e.target.value)} required />
 
-        <label htmlFor="item-volume">Volume (m³, optional)</label>
-        <input id="item-volume" type="number" step="0.01" value={volumeM3} onChange={(e) => setVolumeM3(e.target.value)} />
+              <label htmlFor="item-unit">Unit</label>
+              <select id="item-unit" value={unit} onChange={(e) => setUnit(e.target.value)}>
+                <option value="pcs">pcs</option>
+                <option value="box">box</option>
+                <option value="kg">kg</option>
+              </select>
 
-        <button type="submit">Add item</button>
-      </form>
+              <label htmlFor="item-volume">Volume (m³, optional)</label>
+              <input id="item-volume" type="number" step="0.01" value={volumeM3} onChange={(e) => setVolumeM3(e.target.value)} />
 
-      <table>
-        <thead>
-          <tr>
-            <th>Name</th>
-            <th>SKU</th>
-            <th>Unit</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {items.map((item) => (
-            <tr key={item._id}>
-              <td>{item.name}</td>
-              <td>{item.sku}</td>
-              <td>{item.unit}</td>
-              <td>
-                <button aria-label={`Delete ${item.name}`} onClick={() => handleDelete(item)}>
-                  Delete
-                </button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+              <button type="submit">Add item</button>
+            </form>
+          </div>
+        </div>
+
+        <div className="items-layout-table">
+          <table>
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>SKU</th>
+                <th>Unit</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {items.map((item) => (
+                <tr key={item._id}>
+                  <td>{item.name}</td>
+                  <td>{item.sku}</td>
+                  <td>{item.unit}</td>
+                  <td>
+                    <button aria-label={`Delete ${item.name}`} onClick={() => handleDelete(item)}>
+                      Delete
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
   );
 }

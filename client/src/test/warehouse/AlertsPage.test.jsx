@@ -1,5 +1,5 @@
 import { describe, test, expect, vi } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
 import AlertsPage from '../../pages/warehouse/AlertsPage';
 import apiClient from '../../api/client';
@@ -21,7 +21,13 @@ describe('AlertsPage', () => {
         <AlertsPage />
       </BrowserRouter>
     );
-    await waitFor(() => expect(screen.getByText(/Store 1 — Item X: 3 left \(threshold 10\)/)).toBeInTheDocument());
+    await waitFor(() => {
+      const card = screen.getAllByRole('button', { name: /pack a box/i })[0];
+      expect(card).toBeInTheDocument();
+    });
+    const card = screen.getAllByRole('button', { name: /pack a box/i })[0].closest('.alert-card');
+    expect(within(card).getByText(/Store 1/)).toBeInTheDocument();
+    expect(within(card).getByText(/3 left/)).toBeInTheDocument();
   });
 
   test('shows a friendly message when there are no alerts', async () => {

@@ -22,27 +22,69 @@ export default function DashboardPage() {
       <h1>Dashboard</h1>
 
       {stats && (
-        <div>
-          <div>Packed: {stats.boxesByStatus.PACKED}</div>
-          <div>Assigned: {stats.boxesByStatus.ASSIGNED}</div>
-          <div>In transit: {stats.boxesByStatus.IN_TRANSIT}</div>
-          <div>Delivered: {stats.boxesByStatus.DELIVERED}</div>
-          <div>Total users: {stats.totalUsers}</div>
-          <div>Low stock alerts: {stats.lowStockAlerts}</div>
-          <div>Warehouse utilization: {stats.warehouseUtilizationPct}%</div>
+        <div className="stat-grid">
+          <div className="stat-card">
+            <div className="stat-icon icon-primary">&#128230;</div>
+            <div className="stat-label">Packed</div>
+            <div className="stat-value">{stats.boxesByStatus.PACKED}</div>
+            <div className="stat-sub">Boxes ready</div>
+          </div>
+          <div className="stat-card">
+            <div className="stat-icon icon-warning">&#128205;</div>
+            <div className="stat-label">Assigned</div>
+            <div className="stat-value">{stats.boxesByStatus.ASSIGNED}</div>
+            <div className="stat-sub">Awaiting pickup</div>
+          </div>
+          <div className="stat-card">
+            <div className="stat-icon icon-info">&#128666;</div>
+            <div className="stat-label">In Transit</div>
+            <div className="stat-value">{stats.boxesByStatus.IN_TRANSIT}</div>
+            <div className="stat-sub">On the way</div>
+          </div>
+          <div className="stat-card">
+            <div className="stat-icon icon-success">&#9989;</div>
+            <div className="stat-label">Delivered</div>
+            <div className="stat-value">{stats.boxesByStatus.DELIVERED}</div>
+            <div className="stat-sub">Completed</div>
+          </div>
+          <div className="stat-card">
+            <div className="stat-icon icon-primary">&#128101;</div>
+            <div className="stat-label">Total Users</div>
+            <div className="stat-value">{stats.totalUsers}</div>
+          </div>
+          <div className="stat-card">
+            <div className="stat-icon icon-danger">&#9888;&#65039;</div>
+            <div className="stat-label">Low Stock Alerts</div>
+            <div className="stat-value">{stats.lowStockAlerts}</div>
+          </div>
+          <div className="stat-card">
+            <div className="stat-icon icon-success">&#128200;</div>
+            <div className="stat-label">Warehouse Utilization</div>
+            <div className="stat-value">{stats.warehouseUtilizationPct}%</div>
+          </div>
         </div>
       )}
 
-      <DashboardMap warehouses={warehouses} stores={stores} driverLocations={driverLocations} />
+      <div className="card mb-lg">
+        <div className="card-header">
+          <h3>Live Map</h3>
+        </div>
+        <DashboardMap warehouses={warehouses} stores={stores} driverLocations={driverLocations} />
+      </div>
 
-      <h2>Recent activity</h2>
-      <ul>
-        {logs.map((log) => (
-          <li key={log._id}>
-            {log.action} by {log.actor?.name} {log.box ? `(box ${log.box.code})` : ''}
-          </li>
-        ))}
-      </ul>
+      <div className="card">
+        <div className="card-header">
+          <h3>Recent Activity</h3>
+        </div>
+        <ul>
+          {logs.map((log) => (
+            <li key={log._id} style={{ padding: '10px 0', borderBottom: '1px solid var(--border-light)', fontSize: '0.9375rem' }}>
+              {log.action} by <strong>{log.actor?.name}</strong>{' '}
+              {log.box && <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.875rem', color: 'var(--text-muted)' }}>(box {log.box.code})</span>}
+            </li>
+          ))}
+        </ul>
+      </div>
     </div>
   );
 }

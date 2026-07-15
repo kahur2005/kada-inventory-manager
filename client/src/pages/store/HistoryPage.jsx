@@ -15,44 +15,55 @@ export default function HistoryPage() {
   return (
     <div>
       <h1>Delivery History</h1>
-      <table>
-        <thead>
-          <tr>
-            <th>Code</th>
-            <th>Items</th>
-            <th>Driver</th>
-          </tr>
-        </thead>
-        <tbody>
-          {boxes.map((box) => (
-            <tr key={box._id}>
-              <td>{box.code}</td>
-              <td>{box.items.map((line) => `${line.qty}× ${line.item?.name}`).join(', ')}</td>
-              <td>{box.assignedDriver?.name}</td>
+      <div className="card mb-lg">
+        <div className="card-header">
+          <h3>Delivered Boxes</h3>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>Code</th>
+              <th>Items</th>
+              <th>Driver</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {boxes.map((box) => (
+              <tr key={box._id}>
+                <td className="font-mono font-bold">{box.code}</td>
+                <td>{box.items.map((line) => `${line.qty}x ${line.item?.name}`).join(', ')}</td>
+                <td>{box.assignedDriver?.name}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
 
-      <h2>Opname Adjustment Log</h2>
-      <table>
-        <thead>
-          <tr>
-            <th>When</th>
-            <th>Change</th>
-          </tr>
-        </thead>
-        <tbody>
-          {adjustments.map((log) => (
-            <tr key={log._id}>
-              <td>{new Date(log.timestamp).toLocaleString()}</td>
-              <td>
-                {log.meta.oldQty} → {log.meta.newQty}
-              </td>
+      <div className="card">
+        <div className="card-header">
+          <h3>Opname Adjustment Log</h3>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>When</th>
+              <th>Change</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {adjustments.map((log) => (
+              <tr key={log._id}>
+                <td>{new Date(log.timestamp).toLocaleString()}</td>
+                <td>
+                  <span className="font-mono">{log.meta.oldQty}</span>
+                  {' → '}
+                  <span className="font-mono">{log.meta.newQty}</span>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }

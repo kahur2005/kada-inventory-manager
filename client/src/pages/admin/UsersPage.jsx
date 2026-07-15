@@ -185,9 +185,17 @@ export default function UsersPage() {
   return (
     <div>
       <h1>Users</h1>
-      <form onSubmit={handleSearchSubmit}>
-        <label htmlFor="user-search">Search</label>
-        <input id="user-search" value={searchInput} onChange={(e) => setSearchInput(e.target.value)} />
+
+      <form className="search-bar" onSubmit={handleSearchSubmit}>
+        <div>
+          <label htmlFor="user-search">Search</label>
+          <input
+            id="user-search"
+            placeholder="Name or email..."
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
+          />
+        </div>
         <button type="submit">Search</button>
       </form>
 
@@ -204,7 +212,7 @@ export default function UsersPage() {
         <tbody>
           {users.map((user) => (
             <tr key={user.id}>
-              <td>{user.name}</td>
+              <td className="font-bold">{user.name}</td>
               <td>{user.email}</td>
               <td>
                 <RoleCell user={user} warehouses={warehouses} stores={stores} onSave={handleRoleSave} />
@@ -222,7 +230,7 @@ export default function UsersPage() {
         </tbody>
       </table>
 
-      <div>
+      <div className="pagination">
         <button disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>
           Prev
         </button>
