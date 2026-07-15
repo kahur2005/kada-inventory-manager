@@ -2,6 +2,7 @@ const mongoose = require('mongoose');
 const StoreStock = require('../models/StoreStock');
 const Warehouse = require('../models/Warehouse');
 const HandoverLog = require('../models/HandoverLog');
+const StockHistory = require('../models/StockHistory');
 
 async function canReadStore(req, storeId) {
   if (req.user.role === 'superadmin') return true;
@@ -54,6 +55,14 @@ async function adjustStoreStock(req, res) {
     actor: req.user.id,
     action: 'STOCK_ADJUSTED',
     meta: { storeStockId: row._id.toString(), oldQty, newQty: qty },
+  });
+  await StockHistory.create({
+    stockType: 'store',
+    store: row.store,
+    item: row.item,
+    qty,
+    changeDelta: qty - oldQty,
+    reason: 'ADJUSTMENT',
   });
   res.json({ storeStock: row });
 }
