@@ -1,11 +1,12 @@
 const mongoose = require('mongoose');
 const HandoverLog = require('../models/HandoverLog');
 const Box = require('../models/Box');
+const { buildDateRangeFilter } = require('../utils/dateRange');
 
 async function listLogs(req, res) {
   const page = Math.max(parseInt(req.query.page, 10) || 1, 1);
   const limit = Math.max(parseInt(req.query.limit, 10) || 20, 1);
-  const { box, store } = req.query;
+  const { box, store, from, to } = req.query;
 
   // Validate box query param if present
   if (box && !mongoose.Types.ObjectId.isValid(box)) {
@@ -15,6 +16,11 @@ async function listLogs(req, res) {
   // Validate store query param if present
   if (store && !mongoose.Types.ObjectId.isValid(store)) {
     return res.status(400).json({ message: 'Invalid store ID format' });
+  }
+
+  const { range, error } = buildDateRangeFilter(from, to);
+  if (error) {
+    return res.status(400).json({ message: error });
   }
 
   let filter = {};
@@ -31,6 +37,7 @@ async function listLogs(req, res) {
     const boxesForStore = await Box.find({ destinationStore: store }).select('_id');
     extra.box = { $in: boxesForStore.map((b) => b._id) };
   }
+  if (range) extra.timestamp = range;
 
   const finalFilter = Object.keys(extra).length > 0 ? { $and: [filter, extra] } : filter;
 

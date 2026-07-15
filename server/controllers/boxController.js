@@ -5,6 +5,7 @@ const WarehouseStock = require('../models/WarehouseStock');
 const HandoverLog = require('../models/HandoverLog');
 const User = require('../models/User');
 const { generateQrDataUrl } = require('../utils/qr');
+const { buildDateRangeFilter } = require('../utils/dateRange');
 
 function escapeRegex(str) {
   return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -78,11 +79,17 @@ async function createBox(req, res) {
 async function listBoxes(req, res) {
   const page = Math.max(parseInt(req.query.page, 10) || 1, 1);
   const limit = Math.max(parseInt(req.query.limit, 10) || 10, 1);
-  const { status, search } = req.query;
+  const { status, search, from, to } = req.query;
 
   const filter = {};
   if (status) filter.status = status;
   if (search) filter.code = new RegExp(escapeRegex(search), 'i');
+
+  const { range, error } = buildDateRangeFilter(from, to);
+  if (error) {
+    return res.status(400).json({ message: error });
+  }
+  if (range) filter.createdAt = range;
 
   if (req.user.role === 'warehouse_admin') {
     filter.warehouse = req.user.warehouse;
