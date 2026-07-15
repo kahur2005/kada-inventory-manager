@@ -1,40 +1,50 @@
-import { useState, useEffect, useCallback } from 'react';
-import Swal from 'sweetalert2';
-import apiClient from '../../api/client';
+import { useState, useEffect, useCallback } from "react";
+import Swal from "sweetalert2";
+import apiClient from "../../api/client";
 
-const ROLES = ['unassigned', 'superadmin', 'warehouse_admin', 'store_admin', 'driver'];
+const ROLES = [
+  "unassigned",
+  "superadmin",
+  "warehouse_admin",
+  "store_admin",
+  "driver",
+];
 
 function RoleCell({ user, warehouses, stores, onSave }) {
   const [role, setRole] = useState(user.role);
-  const [warehouseId, setWarehouseId] = useState(user.warehouse?.id || '');
-  const [storeId, setStoreId] = useState(user.store?.id || '');
+  const [warehouseId, setWarehouseId] = useState(user.warehouse?.id || "");
+  const [storeId, setStoreId] = useState(user.store?.id || "");
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     setRole(user.role);
-    setWarehouseId(user.warehouse?.id || '');
-    setStoreId(user.store?.id || '');
+    setWarehouseId(user.warehouse?.id || "");
+    setStoreId(user.store?.id || "");
   }, [user]);
 
   const dirty =
-    role !== user.role || (role === 'warehouse_admin' && warehouseId !== (user.warehouse?.id || '')) ||
-    (role === 'store_admin' && storeId !== (user.store?.id || ''));
+    role !== user.role ||
+    (role === "warehouse_admin" &&
+      warehouseId !== (user.warehouse?.id || "")) ||
+    (role === "store_admin" && storeId !== (user.store?.id || ""));
 
-  const scopeMissing = (role === 'warehouse_admin' && !warehouseId) || (role === 'store_admin' && !storeId);
+  const scopeMissing =
+    (role === "warehouse_admin" && !warehouseId) ||
+    (role === "store_admin" && !storeId);
 
   async function handleSave() {
     if (scopeMissing) return;
     setSaving(true);
     try {
       const body = { role };
-      if (role === 'warehouse_admin') body.warehouse = warehouseId;
-      if (role === 'store_admin') body.store = storeId;
+      if (role === "warehouse_admin") body.warehouse = warehouseId;
+      if (role === "store_admin") body.store = storeId;
       await onSave(user.id, body);
     } catch (err) {
       Swal.fire({
-        icon: 'error',
-        title: 'Failed to update role',
-        text: err.response?.data?.message || 'Something went wrong',
+        icon: "error",
+        title: "Failed to update role",
+        text: err.response?.data?.message || "Something went wrong",
       });
     } finally {
       setSaving(false);
@@ -44,7 +54,12 @@ function RoleCell({ user, warehouses, stores, onSave }) {
   return (
     <div>
       <label htmlFor={`role-${user.id}`}>{`Role for ${user.name}`}</label>
-      <select id={`role-${user.id}`} aria-label={`Role for ${user.name}`} value={role} onChange={(e) => setRole(e.target.value)}>
+      <select
+        id={`role-${user.id}`}
+        aria-label={`Role for ${user.name}`}
+        value={role}
+        onChange={(e) => setRole(e.target.value)}
+      >
         {ROLES.map((r) => (
           <option key={r} value={r}>
             {r}
@@ -52,9 +67,11 @@ function RoleCell({ user, warehouses, stores, onSave }) {
         ))}
       </select>
 
-      {role === 'warehouse_admin' && (
+      {role === "warehouse_admin" && (
         <>
-          <label htmlFor={`warehouse-${user.id}`}>{`Warehouse for ${user.name}`}</label>
+          <label
+            htmlFor={`warehouse-${user.id}`}
+          >{`Warehouse for ${user.name}`}</label>
           <select
             id={`warehouse-${user.id}`}
             aria-label={`Warehouse for ${user.name}`}
@@ -72,7 +89,7 @@ function RoleCell({ user, warehouses, stores, onSave }) {
         </>
       )}
 
-      {role === 'store_admin' && (
+      {role === "store_admin" && (
         <>
           <label htmlFor={`store-${user.id}`}>{`Store for ${user.name}`}</label>
           <select
@@ -95,34 +112,40 @@ function RoleCell({ user, warehouses, stores, onSave }) {
       <button onClick={handleSave} disabled={!dirty || scopeMissing || saving}>
         Save
       </button>
-      {scopeMissing && <p role="alert">Please select a {role === 'warehouse_admin' ? 'warehouse' : 'store'} before saving.</p>}
+      {scopeMissing && (
+        <p role="alert">
+          Please select a {role === "warehouse_admin" ? "warehouse" : "store"}{" "}
+          before saving.
+        </p>
+      )}
     </div>
   );
 }
 
 function InfoCell({ user }) {
-  if (user.role === 'driver') {
+  if (user.role === "driver") {
     return (
       <span>
-        Driver: {user.name} — {user.driverQrToken ? 'QR ready' : 'QR not generated yet'}
+        Driver: {user.name} —{" "}
+        {user.driverQrToken ? "QR ready" : "QR not generated yet"}
       </span>
     );
   }
-  if (user.role === 'store_admin') {
+  if (user.role === "store_admin") {
     if (!user.store) return <span>Not linked to a store</span>;
     return (
       <span>
         {user.store.name}
-        {user.store.address ? ` — ${user.store.address}` : ''}
+        {user.store.address ? ` — ${user.store.address}` : ""}
       </span>
     );
   }
-  if (user.role === 'warehouse_admin') {
+  if (user.role === "warehouse_admin") {
     if (!user.warehouse) return <span>Not linked to a warehouse</span>;
     return (
       <span>
         {user.warehouse.name}
-        {user.warehouse.address ? ` — ${user.warehouse.address}` : ''}
+        {user.warehouse.address ? ` — ${user.warehouse.address}` : ""}
       </span>
     );
   }
@@ -136,14 +159,14 @@ export default function UsersPage() {
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [limit] = useState(10);
-  const [search, setSearch] = useState('');
-  const [searchInput, setSearchInput] = useState('');
+  const [search, setSearch] = useState("");
+  const [searchInput, setSearchInput] = useState("");
 
   const load = useCallback(async () => {
     const [usersRes, warehousesRes, storesRes] = await Promise.all([
-      apiClient.get('/users', { params: { search, page, limit } }),
-      apiClient.get('/warehouses'),
-      apiClient.get('/stores'),
+      apiClient.get("/users", { params: { search, page, limit } }),
+      apiClient.get("/warehouses"),
+      apiClient.get("/stores"),
     ]);
     setUsers(usersRes.data.users);
     setTotal(usersRes.data.total);
@@ -163,10 +186,10 @@ export default function UsersPage() {
   async function handleDelete(user) {
     const result = await Swal.fire({
       title: `Delete ${user.name}?`,
-      text: 'This cannot be undone.',
-      icon: 'warning',
+      text: "This cannot be undone.",
+      icon: "warning",
       showCancelButton: true,
-      confirmButtonText: 'Delete',
+      confirmButtonText: "Delete",
     });
     if (result.isConfirmed) {
       await apiClient.delete(`/users/${user.id}`);
@@ -215,13 +238,18 @@ export default function UsersPage() {
               <td className="font-bold">{user.name}</td>
               <td>{user.email}</td>
               <td>
-                <RoleCell user={user} warehouses={warehouses} stores={stores} onSave={handleRoleSave} />
+                <RoleCell
+                  user={user}
+                  warehouses={warehouses}
+                  stores={stores}
+                  onSave={handleRoleSave}
+                />
               </td>
               <td>
-                <InfoCell user={user} />
-              </td>
-              <td>
-                <button aria-label={`Delete ${user.name}`} onClick={() => handleDelete(user)}>
+                <button
+                  aria-label={`Delete ${user.name}`}
+                  onClick={() => handleDelete(user)}
+                >
                   Delete
                 </button>
               </td>
@@ -237,7 +265,10 @@ export default function UsersPage() {
         <span>
           Page {page} of {totalPages}
         </span>
-        <button disabled={page >= totalPages} onClick={() => setPage((p) => p + 1)}>
+        <button
+          disabled={page >= totalPages}
+          onClick={() => setPage((p) => p + 1)}
+        >
           Next
         </button>
       </div>
