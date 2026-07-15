@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import apiClient from '../../api/client';
 import MapPicker from '../../components/MapPicker';
+import AddressSearch from '../../components/AddressSearch';
+import Swal from 'sweetalert2';
 
 export default function WarehousesPage() {
   const [warehouses, setWarehouses] = useState([]);
@@ -13,6 +15,16 @@ export default function WarehousesPage() {
   const [selectedStores, setSelectedStores] = useState([]);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
+
+  const [editId, setEditId] = useState(null);
+  const [editName, setEditName] = useState('');
+  const [editAddress, setEditAddress] = useState('');
+  const [editCoords, setEditCoords] = useState(null);
+  const [editCapacityM3, setEditCapacityM3] = useState(0);
+  const [editAreaM2, setEditAreaM2] = useState(0);
+  const [editSelectedStores, setEditSelectedStores] = useState([]);
+  const [editDropdownOpen, setEditDropdownOpen] = useState(false);
+  const editDropdownRef = useRef(null);
 
   const load = useCallback(async () => {
     const [whRes, storeRes] = await Promise.all([apiClient.get('/warehouses'), apiClient.get('/stores')]);
@@ -28,6 +40,9 @@ export default function WarehousesPage() {
     function handleClickOutside(e) {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
         setDropdownOpen(false);
+      }
+      if (editDropdownRef.current && !editDropdownRef.current.contains(e.target)) {
+        setEditDropdownOpen(false);
       }
     }
     document.addEventListener('mousedown', handleClickOutside);
@@ -59,18 +74,128 @@ export default function WarehousesPage() {
     );
   }
 
+  function toggleEditStore(storeId) {
+    setEditSelectedStores((prev) =>
+      prev.includes(storeId) ? prev.filter((id) => id !== storeId) : [...prev, storeId]
+    );
+  }
+
+  function startEdit(wh) {
+    setEditId(wh._id);
+    setEditName(wh.name);
+    setEditAddress(wh.address);
+    setEditCoords(wh.coords);
+    setEditCapacityM3(wh.capacityM3 || 0);
+    setEditAreaM2(wh.areaM2 || 0);
+    setEditSelectedStores((wh.stores || []).map((s) => s._id || s));
+  }
+
+  function cancelEdit() {
+    setEditId(null);
+  }
+
+  async function handleSaveEdit(e) {
+    e.preventDefault();
+    await apiClient.patch(`/warehouses/${editId}`, {
+      name: editName,
+      address: editAddress,
+      coords: editCoords,
+      capacityM3: Number(editCapacityM3),
+      areaM2: Number(editAreaM2),
+      stores: editSelectedStores,
+    });
+    setEditId(null);
+    load();
+  }
+
+  async function handleDelete(wh) {
+    const result = await Swal.fire({
+      title: `Delete ${wh.name}?`,
+      text: 'This cannot be undone.',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Delete',
+    });
+    if (result.isConfirmed) {
+      await apiClient.delete(`/warehouses/${wh._id}`);
+      load();
+    }
+  }
+
   return (
     <div>
       <h1>Warehouses</h1>
 
       {warehouses.map((wh) => (
         <div key={wh._id} className="warehouse-card">
-          <h3>{wh.name}</h3>
-          <p>{wh.address}</p>
-          <div className="progress-bar">
-            <div className="progress-bar-fill" style={{ width: `${wh.utilizationPct}%` }} />
-          </div>
-          <div className="progress-label">{wh.utilizationPct}% utilized</div>
+          {editId === wh._id ? (
+            <form onSubmit={handleSaveEdit}>
+              <h3>Edit warehouse</h3>
+              <label htmlFor={`edit-wh-name-${wh._id}`}>Name</label>
+              <input id={`edit-wh-name-${wh._id}`} value={editName} onChange={(e) => setEditName(e.target.value)} required />
+
+              <label htmlFor={`edit-wh-address-${wh._id}`}>Address</label>
+              <AddressSearch
+                id={`edit-wh-address-${wh._id}`}
+                value={editAddress}
+                onChange={setEditAddress}
+                onPick={setEditCoords}
+                placeholder="Search address..."
+              />
+
+              <label htmlFor={`edit-wh-capacity-${wh._id}`}>Capacity (m³)</label>
+              <input id={`edit-wh-capacity-${wh._id}`} type="number" value={editCapacityM3} onChange={(e) => setEditCapacityM3(e.target.value)} />
+
+              <label htmlFor={`edit-wh-area-${wh._id}`}>Area (m²)</label>
+              <input id={`edit-wh-area-${wh._id}`} type="number" value={editAreaM2} onChange={(e) => setEditAreaM2(e.target.value)} />
+
+              <label>Linked stores</label>
+              <div className="custom-dropdown" ref={editDropdownRef}>
+                <button
+                  type="button"
+                  className="custom-dropdown-trigger"
+                  onClick={() => setEditDropdownOpen((o) => !o)}
+                >
+                  {editSelectedStores.length === 0
+                    ? 'Select stores...'
+                    : `${editSelectedStores.length} store(s) selected`}
+                  <span className="custom-dropdown-arrow">&#9662;</span>
+                </button>
+                {editDropdownOpen && (
+                  <div className="custom-dropdown-menu">
+                    {stores.map((store) => (
+                      <label key={store._id} className="custom-dropdown-item">
+                        <input
+                          type="checkbox"
+                          checked={editSelectedStores.includes(store._id)}
+                          onChange={() => toggleEditStore(store._id)}
+                        />
+                        {store.name}
+                      </label>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
+                <button type="submit">Save</button>
+                <button type="button" onClick={cancelEdit}>Cancel</button>
+              </div>
+            </form>
+          ) : (
+            <>
+              <h3>{wh.name}</h3>
+              <p>{wh.address}</p>
+              <div className="progress-bar">
+                <div className="progress-bar-fill" style={{ width: `${wh.utilizationPct}%` }} />
+              </div>
+              <div className="progress-label">{wh.utilizationPct}% utilized</div>
+              <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+                <button type="button" onClick={() => startEdit(wh)}>Edit</button>
+                <button aria-label={`Delete ${wh.name}`} onClick={() => handleDelete(wh)}>Delete</button>
+              </div>
+            </>
+          )}
         </div>
       ))}
 
@@ -82,7 +207,13 @@ export default function WarehousesPage() {
             <input id="wh-name" value={name} onChange={(e) => setName(e.target.value)} required />
 
             <label htmlFor="wh-address">Address</label>
-            <input id="wh-address" value={address} onChange={(e) => setAddress(e.target.value)} required />
+            <AddressSearch
+              id="wh-address"
+              value={address}
+              onChange={setAddress}
+              onPick={setCoords}
+              placeholder="Search warehouse address..."
+            />
 
             <label htmlFor="wh-capacity">Capacity (m³)</label>
             <input id="wh-capacity" type="number" value={capacityM3} onChange={(e) => setCapacityM3(e.target.value)} />
@@ -119,7 +250,7 @@ export default function WarehousesPage() {
             </div>
           </div>
           <div className="warehouse-form-map">
-            <MapPicker coords={coords} onChange={setCoords} />
+            <MapPicker key={`${coords?.lat}-${coords?.lng}`} coords={coords} onChange={setCoords} />
           </div>
           <div className="warehouse-form-actions">
             <button type="submit">Create warehouse</button>

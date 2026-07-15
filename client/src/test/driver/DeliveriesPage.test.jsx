@@ -31,7 +31,7 @@ describe('DeliveriesPage', () => {
     render(<DeliveriesPage />);
 
     await waitFor(() => expect(screen.getByText('BX-0001')).toBeInTheDocument());
-    expect(screen.getByText('Store 1')).toBeInTheDocument();
+    expect(screen.getAllByText('Store 1').length).toBeGreaterThanOrEqual(1);
     expect(screen.getByLabelText(/active deliveries badge/i)).toHaveTextContent('1');
   });
 

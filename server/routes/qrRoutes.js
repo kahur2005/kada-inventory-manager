@@ -1,8 +1,12 @@
 const express = require("express");
 const QRCode = require("qrcode");
 const Shipment = require("../models/Shipment");
+const { authRequired, requireRole } = require("../middleware/auth");
 
 const router = express.Router();
+
+router.use(authRequired);
+router.use(requireRole("warehouse_admin"));
 
 // Generate QR dari shipment code
 router.get("/shipment/:id", async (req, res) => {

@@ -66,7 +66,7 @@ export default function TrackingPage() {
       </div>
 
       <div className="tracking-map">
-        <LogisticsMap locations={locations} />
+        <LogisticsMap locations={locations} selectedDriverId={selectedDriver} />
       </div>
     </div>
   );

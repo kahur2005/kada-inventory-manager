@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import apiClient from '../../api/client';
+import DriverMapModal from '../../components/DriverMapModal';
 
 const PING_INTERVAL_MS = 45000;
 const POLL_INTERVAL_MS = 15000;
@@ -8,6 +9,7 @@ export default function DeliveriesPage() {
   const [boxes, setBoxes] = useState([]);
   const [delivering, setDelivering] = useState(false);
   const pingIntervalRef = useRef(null);
+  const [mapBox, setMapBox] = useState(null);
 
   const load = useCallback(async () => {
     const res = await apiClient.get('/boxes', { params: { status: '', search: '', page: 1, limit: 50 } });
@@ -52,19 +54,15 @@ export default function DeliveriesPage() {
     });
   }
 
-  const grouped = boxes.reduce((acc, box) => {
-    const key = box.destinationStore?.name || 'Unknown store';
-    acc[key] = acc[key] || [];
-    acc[key].push(box);
-    return acc;
-  }, {});
+  const activeBoxes = boxes.filter((b) => ['ASSIGNED', 'IN_TRANSIT'].includes(b.status));
+  const deliveredBoxes = boxes.filter((b) => b.status === 'DELIVERED');
 
-  const activeCount = boxes.filter((b) => ['ASSIGNED', 'IN_TRANSIT'].includes(b.status)).length;
+  const activeCount = activeBoxes.length;
 
   return (
     <div>
-      <div className="section-header">
-        <h1>
+      <div style={{ textAlign: 'center', marginBottom: 24 }}>
+        <h1 style={{ marginBottom: 12 }}>
           My Deliveries {activeCount > 0 && <span aria-label="active deliveries badge">{activeCount}</span>}
         </h1>
         <button onClick={toggleDelivering}>
@@ -72,44 +70,94 @@ export default function DeliveriesPage() {
         </button>
       </div>
 
-      {Object.entries(grouped).map(([storeName, storeBoxes]) => (
-        <div key={storeName} className="delivery-group">
-          <div className="delivery-group-header">
-            <span>{storeName}</span>
-            <span className="badge badge-gray">{storeBoxes.length} box{storeBoxes.length !== 1 ? 'es' : ''}</span>
+      {activeBoxes.length > 0 && (
+        <div className="section">
+          <div className="section-header">
+            <h2>Active Deliveries</h2>
           </div>
-          {storeBoxes.map((box) => (
-            <div key={box._id} className="delivery-item">
-              <div className="delivery-item-info">
-                <span className="delivery-item-code">{box.code}</span>
-                {box.destinationStore?.address && (
-                  <span className="delivery-item-address">{box.destinationStore.address}</span>
-                )}
-              </div>
-              <div className="flex items-center gap-sm">
-                <span className={`badge badge-${box.status === 'IN_TRANSIT' ? 'orange' : box.status === 'ASSIGNED' ? 'yellow' : 'green'}`}>
+          {activeBoxes.map((box) => (
+            <div key={box._id} className="delivery-group">
+              <div className="delivery-group-header">
+                <span>{box.destinationStore?.name || 'Unknown store'}</span>
+                <span className={`badge badge-${box.status === 'IN_TRANSIT' ? 'orange' : 'yellow'}`}>
                   {box.status}
                 </span>
-                {box.destinationStore?.coords?.lat != null && (
-                  <a
-                    href={`https://www.openstreetmap.org/?mlat=${box.destinationStore.coords.lat}&mlon=${box.destinationStore.coords.lng}`}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="btn-sm"
-                  >
-                    Map
-                  </a>
-                )}
-                {box.status === 'ASSIGNED' && (
-                  <button className="btn-success btn-sm" onClick={() => handlePickup(box)}>
-                    Pick up
-                  </button>
-                )}
+              </div>
+              <div className="delivery-item">
+                <div className="delivery-item-info">
+                  <span className="delivery-item-code">{box.code}</span>
+                  <span className="delivery-item-address">
+                    From: {box.warehouse?.name || 'Unknown'} → To: {box.destinationStore?.name || 'Unknown'}
+                  </span>
+                  {box.destinationStore?.address && (
+                    <span className="delivery-item-address">{box.destinationStore.address}</span>
+                  )}
+                </div>
+                <div className="flex items-center gap-sm">
+                  {box.destinationStore?.coords?.lat != null && (
+                    <button
+                      className="btn-sm"
+                      onClick={() => setMapBox(box)}
+                    >
+                      Map
+                    </button>
+                  )}
+                  {box.status === 'ASSIGNED' && (
+                    <button className="btn-success btn-sm" onClick={() => handlePickup(box)}>
+                      Pick up
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
           ))}
         </div>
-      ))}
+      )}
+
+      {activeBoxes.length === 0 && deliveredBoxes.length === 0 && (
+        <div className="empty">
+          <p>No deliveries assigned</p>
+        </div>
+      )}
+
+      {deliveredBoxes.length > 0 && (
+        <div className="section">
+          <div className="section-header">
+            <h2>Delivery History</h2>
+          </div>
+          <div className="card">
+            <table>
+              <thead>
+                <tr>
+                  <th>Code</th>
+                  <th>From</th>
+                  <th>To</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {deliveredBoxes.map((box) => (
+                  <tr key={box._id}>
+                    <td className="font-mono font-bold">{box.code}</td>
+                    <td>{box.warehouse?.name || '-'}</td>
+                    <td>{box.destinationStore?.name || '-'}</td>
+                    <td>
+                      <span className="badge badge-green">{box.status}</span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {mapBox && (
+        <DriverMapModal
+          destination={mapBox.destinationStore?.coords}
+          onClose={() => setMapBox(null)}
+        />
+      )}
     </div>
   );
 }

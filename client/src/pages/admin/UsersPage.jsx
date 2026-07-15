@@ -10,6 +10,148 @@ const ROLES = [
   "driver",
 ];
 
+function RoleCell({ user, warehouses, stores, onSave }) {
+  const [role, setRole] = useState(user.role);
+  const [warehouseId, setWarehouseId] = useState(user.warehouse?.id || "");
+  const [storeId, setStoreId] = useState(user.store?.id || "");
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    setRole(user.role);
+    setWarehouseId(user.warehouse?.id || "");
+    setStoreId(user.store?.id || "");
+  }, [user]);
+
+  const dirty =
+    role !== user.role ||
+    (role === "warehouse_admin" &&
+      warehouseId !== (user.warehouse?.id || "")) ||
+    (role === "store_admin" && storeId !== (user.store?.id || ""));
+
+  const scopeMissing =
+    (role === "warehouse_admin" && !warehouseId) ||
+    (role === "store_admin" && !storeId);
+
+  async function handleSave() {
+    if (scopeMissing) return;
+    setSaving(true);
+    try {
+      const body = { role };
+      if (role === "warehouse_admin") body.warehouse = warehouseId;
+      if (role === "store_admin") body.store = storeId;
+      await onSave(user.id, body);
+    } catch (err) {
+      Swal.fire({
+        icon: "error",
+        title: "Failed to update role",
+        text: err.response?.data?.message || "Something went wrong",
+      });
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div>
+      <label htmlFor={`role-${user.id}`}>{`Role for ${user.name}`}</label>
+      <select
+        id={`role-${user.id}`}
+        aria-label={`Role for ${user.name}`}
+        value={role}
+        onChange={(e) => setRole(e.target.value)}
+      >
+        {ROLES.map((r) => (
+          <option key={r} value={r}>
+            {r}
+          </option>
+        ))}
+      </select>
+
+      {role === "warehouse_admin" && (
+        <>
+          <label
+            htmlFor={`warehouse-${user.id}`}
+          >{`Warehouse for ${user.name}`}</label>
+          <select
+            id={`warehouse-${user.id}`}
+            aria-label={`Warehouse for ${user.name}`}
+            value={warehouseId}
+            onChange={(e) => setWarehouseId(e.target.value)}
+            required
+          >
+            <option value="">Select warehouse…</option>
+            {warehouses.map((wh) => (
+              <option key={wh._id} value={wh._id}>
+                {wh.name}
+              </option>
+            ))}
+          </select>
+        </>
+      )}
+
+      {role === "store_admin" && (
+        <>
+          <label htmlFor={`store-${user.id}`}>{`Store for ${user.name}`}</label>
+          <select
+            id={`store-${user.id}`}
+            aria-label={`Store for ${user.name}`}
+            value={storeId}
+            onChange={(e) => setStoreId(e.target.value)}
+            required
+          >
+            <option value="">Select store…</option>
+            {stores.map((store) => (
+              <option key={store._id} value={store._id}>
+                {store.name}
+              </option>
+            ))}
+          </select>
+        </>
+      )}
+
+      <button onClick={handleSave} disabled={!dirty || scopeMissing || saving}>
+        Save
+      </button>
+      {scopeMissing && (
+        <p role="alert">
+          Please select a {role === "warehouse_admin" ? "warehouse" : "store"}{" "}
+          before saving.
+        </p>
+      )}
+    </div>
+  );
+}
+
+function InfoCell({ user }) {
+  if (user.role === "driver") {
+    return (
+      <span>
+        Driver: {user.name} —{" "}
+        {user.driverQrToken ? "QR ready" : "QR not generated yet"}
+      </span>
+    );
+  }
+  if (user.role === "store_admin") {
+    if (!user.store) return <span>Not linked to a store</span>;
+    return (
+      <span>
+        {user.store.name}
+        {user.store.address ? ` — ${user.store.address}` : ""}
+      </span>
+    );
+  }
+  if (user.role === "warehouse_admin") {
+    if (!user.warehouse) return <span>Not linked to a warehouse</span>;
+    return (
+      <span>
+        {user.warehouse.name}
+        {user.warehouse.address ? ` — ${user.warehouse.address}` : ""}
+      </span>
+    );
+  }
+  return <span>—</span>;
+}
+
 export default function UsersPage() {
   const [users, setUsers] = useState([]);
   const [warehouses, setWarehouses] = useState([]);
@@ -96,21 +238,12 @@ export default function UsersPage() {
               <td className="font-bold">{user.name}</td>
               <td>{user.email}</td>
               <td>
-                <label
-                  htmlFor={`role-${user.id}`}
-                >{`Role for ${user.name}`}</label>
-                <select
-                  id={`role-${user.id}`}
-                  aria-label={`Role for ${user.name}`}
-                  value={user.role}
-                  onChange={(e) => handleRoleChange(user.id, e.target.value)}
-                >
-                  {ROLES.map((role) => (
-                    <option key={role} value={role}>
-                      {role}
-                    </option>
-                  ))}
-                </select>
+                <RoleCell
+                  user={user}
+                  warehouses={warehouses}
+                  stores={stores}
+                  onSave={handleRoleSave}
+                />
               </td>
               <td>
                 <button
