@@ -8,11 +8,14 @@ export default function StockPage() {
   const [opname, setOpname] = useState(false);
   const [drafts, setDrafts] = useState({});
 
+  // `user.store` may be a populated object ({ id, name, ... }) or a bare id string.
+  const storeId = user?.store?.id ?? user?.store;
+
   const load = useCallback(async () => {
-    if (!user?.store) return;
-    const res = await apiClient.get('/store-stock', { params: { store: user.store } });
+    if (!storeId) return;
+    const res = await apiClient.get('/store-stock', { params: { store: storeId } });
     setRows(res.data.storeStock);
-  }, [user]);
+  }, [storeId]);
 
   useEffect(() => {
     load();

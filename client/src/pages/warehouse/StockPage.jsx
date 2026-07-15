@@ -9,16 +9,19 @@ export default function StockPage() {
   const [activeStoreId, setActiveStoreId] = useState(null);
   const [storeStock, setStoreStock] = useState([]);
 
+  // `user.warehouse` may be a populated object ({ id, name, ... }) or a bare id string.
+  const warehouseId = user?.warehouse?.id ?? user?.warehouse;
+
   useEffect(() => {
-    if (!user?.warehouse) return;
+    if (!warehouseId) return;
     apiClient.get('/warehouses').then((res) => {
-      const mine = res.data.warehouses.find((w) => w._id === user.warehouse);
+      const mine = res.data.warehouses.find((w) => w._id === warehouseId);
       setLinkedStores(mine ? mine.stores : []);
     });
-    apiClient.get('/warehouse-stock', { params: { warehouse: user.warehouse } }).then((res) => {
+    apiClient.get('/warehouse-stock', { params: { warehouse: warehouseId } }).then((res) => {
       setWarehouseStock(res.data.warehouseStock);
     });
-  }, [user]);
+  }, [warehouseId]);
 
   const loadStoreStock = useCallback((storeId) => {
     setActiveStoreId(storeId);
