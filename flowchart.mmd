@@ -1,8 +1,8 @@
 flowchart TD
     A[Pengguna Akses Website] --> B{Sudah Login?}
-    B -->|Belum - Register| C[Isi Form Register]
-    C --> D[Akun Dibuat - Role: unassigned]
-    D --> E[Redirect /pending - Menunggu Penugasan]
+    B -->|Belum| C[Register: Isi Nama, Email, Password]
+    C --> D[Akun Dibuat - Role unassigned]
+    D --> E[Redirect ke Halaman Pending]
     E --> F[Superadmin Assign Role]
     F --> G[Redirect ke Dashboard sesuai Role]
 
@@ -12,28 +12,28 @@ flowchart TD
     I -->|Tidak| J[Error Message]
     J --> H
 
-    G -->|Superadmin| K[/dashboard - Stat Cards + Map Global]
-    G -->|Warehouse Admin| L[/warehouse/alerts - Stok Rendah]
-    G -->|Store Admin| M[/store/scan - Scan QR]
-    G -->|Driver| N[/driver - Pengiriman Aktif]
+    G -->|Superadmin| K[Dashboard Global]
+    G -->|Warehouse Admin| L[Halaman Alert Stok Rendah]
+    G -->|Store Admin| M[Halaman Scan QR]
+    G -->|Driver| N[Halaman Pengiriman Aktif]
 
     L --> O{Ada Stok di Bawah Threshold?}
     O -->|Ya| P[Klik Pack a Box]
     O -->|Tidak| Q[Dashboard Normal]
 
-    P --> R[/warehouse/boxes - Pilih Toko + Item]
+    P --> R[Halaman Box - Pilih Toko dan Item]
     R --> S[Submit - Stok Gudang Berkurang]
     S --> T[QR Code Box Dihasilkan]
     T --> U[Status Box: PACKED]
 
-    U --> V[/warehouse/assign - Pilih Box]
+    U --> V[Halaman Assign - Pilih Box]
     V --> W{Metode Assign?}
     W -->|Scan QR| X[Scan QR Driver via Kamera]
     W -->|Manual| Y[Pilih Driver dari Dropdown]
     X --> Z[Status Box: ASSIGNED]
     Y --> Z
 
-    Z --> AA[Driver Buka /driver di Mobile]
+    Z --> AA[Driver Buka Halaman di Mobile]
     AA --> AB[Lihat Box Ditugaskan]
     AB --> AC[Klik Pick Up]
     AC --> AD[Status Box: IN_TRANSIT]
@@ -41,18 +41,18 @@ flowchart TD
     AE --> AF[Lokasi Dikirim Setiap 45 detik]
 
     AF --> AG[Driver dalam Perjalanan]
-    AG --> AH[Warehouse Admin Pantau di /warehouse/tracking]
-    AG --> AI[Superadmin Pantau di /dashboard]
+    AG --> AH[Warehouse Admin Pantau di Map]
+    AG --> AI[Superadmin Pantau di Map Global]
 
-    AG --> AJ[Store Admin Buka /store/scan]
+    AG --> AJ[Store Admin Buka Halaman Scan]
     AJ --> AK[Scan QR Box via Kamera]
-    AK --> AL{Validasi QR + Status + Tujuan?}
+    AK --> AL{Validasi QR dan Status dan Tujuan?}
     AL -->|Valid| AM[Stok Toko Bertambah Otomatis]
     AL -->|Invalid| AN[Error - Coba Lagi]
     AM --> AO[Status Box: DELIVERED]
     AO --> AP[Handover Log Tercatat]
 
-    AP --> AQ[Store Admin Buka /store/stock]
+    AP --> AQ[Store Admin Buka Halaman Stok]
     AQ --> AR[Toggle Opname Mode]
     AR --> AS[Edit Kuantitas Stok]
     AS --> AT[Simpan Perubahan]
