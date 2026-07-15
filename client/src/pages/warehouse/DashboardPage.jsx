@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import {
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
+  XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   LineChart, Line, ReferenceLine,
 } from 'recharts';
 import apiClient from '../../api/client';
@@ -27,12 +27,6 @@ export default function WarehouseDashboardPage() {
   if (loading) return <div className="card"><p>Loading dashboard...</p></div>;
   if (!driverData || !stockData) return <div className="card"><p>Failed to load dashboard data.</p></div>;
 
-  const driverChartData = driverData.drivers.map((d) => ({
-    name: d.driverName,
-    'Actual (min)': d.avgActualMinutes ?? 0,
-    'Estimated (min)': d.avgEstimatedMinutes ?? 0,
-  }));
-
   const whItemOptions = stockData.warehouseStock.map((s) => ({ id: s.itemId, label: `${s.itemName} (${s.itemSku})` }));
   const uniqueStoreIds = [...new Set(stockData.storeStock.map((s) => s.storeId))];
   const storeOptions = uniqueStoreIds.map((sid) => {
@@ -42,9 +36,9 @@ export default function WarehouseDashboardPage() {
 
   const whHistoryForItem = selectedWhItem
     ? (stockData.warehouseHistory[selectedWhItem] || []).map((h) => ({
-        date: new Date(h.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-        qty: h.qty,
-      }))
+      date: new Date(h.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+      qty: h.qty,
+    }))
     : [];
 
   const whItemMeta = stockData.warehouseStock.find((s) => s.itemId === selectedWhItem);
@@ -52,9 +46,9 @@ export default function WarehouseDashboardPage() {
   const storeHistoryKey = selectedStore && selectedStoreItem ? `${selectedStore}:${selectedStoreItem}` : '';
   const storeHistoryForItem = storeHistoryKey
     ? (stockData.storeHistory[storeHistoryKey] || []).map((h) => ({
-        date: new Date(h.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-        qty: h.qty,
-      }))
+      date: new Date(h.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+      qty: h.qty,
+    }))
     : [];
 
   const storeItemMeta = stockData.storeStock.find(
@@ -97,7 +91,7 @@ export default function WarehouseDashboardPage() {
       </div>
 
       {/* Reorder Alerts */}
-      <div className="card">
+      <div className="card mb-lg">
         <div className="card-header">
           <h3>Reorder Alerts</h3>
         </div>
@@ -128,28 +122,6 @@ export default function WarehouseDashboardPage() {
               ))}
             </tbody>
           </table>
-        )}
-      </div>
-
-      {/* Driver Performance Chart */}
-      <div className="card mb-lg">
-        <div className="card-header">
-          <h3>Driver Performance — Actual vs Estimated Delivery Time</h3>
-        </div>
-        {driverChartData.length === 0 ? (
-          <p style={{ color: 'var(--text-muted)' }}>No delivered boxes with driver assignments yet.</p>
-        ) : (
-          <ResponsiveContainer width="100%" height={350}>
-            <BarChart data={driverChartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-              <XAxis dataKey="name" tick={{ fontSize: 13 }} />
-              <YAxis label={{ value: 'Minutes', angle: -90, position: 'insideLeft', fontSize: 13 }} />
-              <Tooltip contentStyle={{ borderRadius: 12, border: '1px solid var(--border)' }} />
-              <Legend />
-              <Bar dataKey="Estimated (min)" fill="#2f80ed" radius={[6, 6, 0, 0]} />
-              <Bar dataKey="Actual (min)" fill="#10b981" radius={[6, 6, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
         )}
       </div>
 
@@ -304,7 +276,7 @@ export default function WarehouseDashboardPage() {
         )}
       </div>
 
-      
+
     </div>
   );
 }
