@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 const WarehouseStock = require('../models/WarehouseStock');
 const HandoverLog = require('../models/HandoverLog');
+const StockHistory = require('../models/StockHistory');
 
 async function listWarehouseStock(req, res) {
   const { warehouse } = req.query;
@@ -40,6 +41,14 @@ async function addWarehouseStock(req, res) {
     actor: req.user.id,
     action: 'WAREHOUSE_STOCK_ADDED',
     meta: { warehouse, item, qtyAdded: qty },
+  });
+  await StockHistory.create({
+    stockType: 'warehouse',
+    warehouse,
+    item,
+    qty: row.qty,
+    changeDelta: qty,
+    reason: 'RESTOCK',
   });
   res.status(201).json({ warehouseStock: row });
 }
