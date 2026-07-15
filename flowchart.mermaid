@@ -1,0 +1,241 @@
+# LogistiQ - Flowchart Alur Penggunaan Website
+
+## 1. Alur Autentikasi
+
+```mermaid
+flowchart TD
+    A[Pengguna Mengakses Website] --> B{Sudah Login?}
+    B -->|Ya| C{Role Pengguna}
+    B -->|Daftar| D[Isi Form Register: Nama, Email, Password]
+    D --> E[Akun Dibuat - Role: unassigned]
+    E --> F[Redirect ke /pending - Menunggu Penugasan]
+    F --> G[Superadmin Assign Role]
+    G --> H[Refresh - Redirect ke Dashboard sesuai Role]
+    B -->|Login| I[Isi Form Login: Email, Password]
+    I --> J{Login Berhasil?}
+    J -->|Ya| C
+    J -->|Tidak| K[Error Message]
+    K --> I
+
+    C -->|Superadmin| L[Dashboard Global]
+    C -->|Warehouse Admin| M[Alerts Page]
+    C -->|Store Admin| N[Scan Page]
+    C -->|Driver| O[Deliveries Page]
+```
+
+## 2. Alur Utama Replenishment (Inti Sistem)
+
+```mermaid
+flowchart TD
+    subgraph "1. Deteksi Alert"
+        A1[Warehouse Admin Buka /warehouse/alerts] --> A2[Lihat Card Stok Rendah]
+        A2 --> A3{Ada Stok di Bawah Threshold?}
+        A3 -->|Ya| A4[Klik Pack a Box]
+        A3 -->|Tidak| A5[Dashboard Normal]
+    end
+
+    subgraph "2. Packing Box"
+        B1[Buka /warehouse/boxes] --> B2[Pilih Tujuan Toko]
+        B2 --> B3[Tambah Item + Kuantitas]
+        B3 --> B4[Submit - Stok Gudang Berkurang]
+        B4 --> B5[QR Code Box Dihasilkan]
+        B5 --> B6[Status Box: PACKED]
+    end
+
+    subgraph "3. Assign Driver"
+        C1[Buka /warehouse/assign] --> C2[Lihat Box Status PACKED]
+        C2 --> C3[Pilih Box dengan Checkbox]
+        C3 --> C4{Metode Assign?}
+        C4 -->|Scan QR Driver| C5[Scan QR Driver via Kamera]
+        C4 -->|Manual| C6[Pilih Driver dari Dropdown]
+        C5 --> C7[Status Box: ASSIGNED]
+        C6 --> C7
+    end
+
+    subgraph "4. Driver Pickup"
+        D1[Driver Buka /driver di Mobile] --> D2[Lihat Box yang Ditugaskan]
+        D2 --> D3[Klik Pick Up]
+        D3 --> D4[Status Box: IN_TRANSIT]
+        D4 --> D5[Aktifkan Kirim Lokasi GPS]
+        D5 --> D6[Lokasi Dikirim Setiap 45 detik]
+    end
+
+    subgraph "5. Pengiriman"
+        E1[Driver dalam Perjalanan] --> E2[Lokasi Real-time di Map]
+        E2 --> E3[Warehouse Admin Pantau di /warehouse/tracking]
+        E3 --> E4[Superadmin Pantau di /dashboard]
+    end
+
+    subgraph "6. Penerimaan di Toko"
+        F1[Store Admin Buka /store/scan] --> F2[Scan QR Box via Kamera]
+        F2 --> F3{Validasi QR + Status + Tujuan?}
+        F3 -->|Valid| F4[Stok Toko Bertambah Otomatis]
+        F3 -->|Invalid| F5[Error - Coba Lagi]
+        F4 --> F6[Status Box: DELIVERED]
+        F6 --> F7[Handover Log Tercatat]
+    end
+
+    subgraph "7. Penyesuaian Stok (Opname)"
+        G1[Store Admin Buka /store/stock] --> G2[Toggle Opname Mode]
+        G2 --> G3[Edit Kuantitas Stok]
+        G3 --> G4[Simpan Perubahan]
+        G4 --> G5[Audit Log: Old Value → New Value]
+    end
+
+    A4 --> B1
+    B6 --> C1
+    C7 --> D1
+    D6 --> E1
+    E4 --> F1
+    F7 --> G1
+```
+
+## 3. Alur Superadmin
+
+```mermaid
+flowchart TD
+    A[Superadmin Login] --> B[/dashboard]
+    B --> C[Lihat Stat Cards: Box, Users, Alerts, Utilization]
+    B --> D[Lihat Map Real-time: Gudang, Toko, Driver]
+    B --> E[Lihat Activity Log]
+
+    A --> F[/admin/users]
+    F --> G[Search/Paginate Users]
+    G --> H[Assign Role ke User]
+    H --> I[Link ke Gudang/Toko]
+
+    A --> J[/admin/items]
+    J --> K[CRUD Item Catalog]
+
+    A --> L[/admin/warehouses]
+    L --> M[CRUD Gudang]
+    M --> N[Set Koordinat via Map Picker]
+    M --> O[Atur Kapasitas & Link Toko]
+
+    A --> P[/admin/stores]
+    P --> Q[CRUD Toko]
+
+    A --> R[/admin/warehouse-stock]
+    R --> S[Pilih Gudang]
+    S --> T[Tambah/Edit/Hapus Stok Item]
+```
+
+## 4. Alur Driver
+
+```mermaid
+flowchart TD
+    A[Driver Login] --> B[/driver]
+    B --> C[Lihat Daftar Pengiriman Aktif]
+    C --> D{Status Box?}
+    D -->|ASSIGNED| E[Klik Pick Up]
+    D -->|IN_TRANSIT| F[Lihat Peta & Rute]
+    D -->|DELIVERED| G[Riwayat Pengiriman]
+
+    E --> H[Status: IN_TRANSIT]
+    H --> I[Aktifkan GPS Tracking]
+    I --> J[Lokasi Dikirim Otomatis]
+    J --> K[Warehouse Admin Pantau di Map]
+
+    F --> L[Buka Peta Tujuan]
+    L --> M[Navigasi ke Toko]
+
+    A --> N[/driver/qr]
+    N --> O[Tampilkan QR Code Pribadi]
+    O --> P[Warehouse Admin Scan untuk Assign]
+```
+
+## 5. Alur Store Admin
+
+```mermaid
+flowchart TD
+    A[Store Admin Login] --> B[/store/scan]
+    B --> C[Scan QR Box dari Driver]
+    C --> D{Valid?}
+    D -->|Ya| E[Stok Bertambah Otomatis]
+    D -->|Tidak| F[Error - Coba Lagi]
+    E --> G[Box Status: DELIVERED]
+
+    A --> H[/store/stock]
+    H --> I[Lihat Stok Toko]
+    I --> J{Low Stock?}
+    J -->|Ya| K[Badge Peringatan]
+    J -->|Tidak| L[Stok Normal]
+    I --> M[Toggle Opname Mode]
+    M --> N[Edit Kuantitas]
+    N --> O[Simpan & Log Audit]
+
+    A --> P[/store/history]
+    P --> Q[Lihat Box yang Diterima]
+    P --> R[Lihat Log Penyesuaian Stok]
+```
+
+## 6. Alur Tracking Driver Real-time
+
+```mermaid
+flowchart TD
+    A[Driver Aktif] --> B[navigator.geolocation]
+    B --> C[Kirim POST /driver-location]
+    C --> D[Server Upsert DriverLocation]
+    D --> E[Data Tersimpan: coords, speed, heading]
+
+    F[Warehouse Admin] --> G[Buka /warehouse/tracking]
+    G --> H[Poll GET /tracking/locations]
+    H --> I[Tampilkan Marker di Leaflet Map]
+    I --> J[Update Setiap 5 detik]
+
+    K[Superadmin] --> L[Buka /dashboard]
+    L --> M[Poll Data Driver]
+    M --> N[Tampilkan di Map Global]
+```
+
+## 7. Diagram Alur Keseluruhan Sistem
+
+```mermaid
+flowchart LR
+    subgraph "Input"
+        A1[Register/Akun Baru]
+        A2[Login]
+        A3[Scan QR]
+    end
+
+    subgraph "Processing"
+        B1[Superadmin: Kelola Users, Items, Gudang, Toko]
+        B2[Warehouse Admin: Alert → Pack → Assign]
+        B3[Driver: Pick Up → Deliver → GPS]
+        B4[Store Admin: Scan → Opname]
+    end
+
+    subgraph "Output"
+        C1[Dashboard Global]
+        C2[Map Real-time]
+        C3[Stok Ter-update]
+        C4[Handover Log]
+        C5[Audit Trail]
+    end
+
+    A1 --> B1
+    A2 --> B2
+    A2 --> B3
+    A2 --> B4
+    A3 --> B4
+
+    B1 --> C1
+    B2 --> C2
+    B3 --> C2
+    B4 --> C3
+    B4 --> C4
+    B4 --> C5
+    B2 --> C5
+```
+
+---
+
+## Keterangan Simbol
+
+| Simbol | Keterangan |
+|--------|------------|
+| `[ ]` | Proses / Aktivitas |
+| `{ }` | Keputusan (Decision) |
+| `-->` | Alur ke langkah berikutnya |
+| `subgraph` | Grup langkah yang terkait |
+| `/path` | Halaman/rute di website |

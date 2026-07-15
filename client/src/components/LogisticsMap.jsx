@@ -1,4 +1,5 @@
-import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
+import { useEffect } from "react";
+import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 
@@ -30,8 +31,21 @@ const STATUS_LABEL = {
   offline: "Offline",
 };
 
-export default function LogisticsMap({ locations }) {
+function FlyToDriver({ driver }) {
+  const map = useMap();
+  useEffect(() => {
+    if (driver && driver.lat != null && driver.lng != null) {
+      map.flyTo([driver.lat, driver.lng], 15, { duration: 1.5 });
+    }
+  }, [map, driver]);
+  return null;
+}
+
+export default function LogisticsMap({ locations, selectedDriverId }) {
   const center = [-6.2, 106.8];
+  const selectedDriver = selectedDriverId
+    ? locations.drivers.find((d) => d.id === selectedDriverId)
+    : null;
 
   return (
     <MapContainer
@@ -43,6 +57,8 @@ export default function LogisticsMap({ locations }) {
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
       />
+
+      {selectedDriver && <FlyToDriver driver={selectedDriver} />}
 
       {locations.warehouses.map((w) => (
         <Marker key={w.id} position={[w.lat, w.lng]} icon={warehouseIcon}>

@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 
 const NOMINATIM_URL = 'https://nominatim.openstreetmap.org/search';
 
-export default function AddressSearch({ value, onChange, onPick, placeholder = 'Search address...' }) {
+export default function AddressSearch({ id, value, onChange, onPick, placeholder = 'Search address...' }) {
   const [query, setQuery] = useState(value || '');
   const [suggestions, setSuggestions] = useState([]);
   const [open, setOpen] = useState(false);
@@ -60,6 +60,7 @@ export default function AddressSearch({ value, onChange, onPick, placeholder = '
   return (
     <div className="address-search" ref={wrapperRef}>
       <input
+        id={id}
         type="text"
         value={query}
         onChange={handleChange}

@@ -9,8 +9,7 @@ export default function BoxesPage() {
   const [status, setStatus] = useState('');
   const [search, setSearch] = useState('');
   const [destinationStore, setDestinationStore] = useState('');
-  const [lineItem, setLineItem] = useState('');
-  const [lineQty, setLineQty] = useState('');
+  const [lineItems, setLineItems] = useState([{ item: '', qty: 1 }]);
   const [newBoxQr, setNewBoxQr] = useState(null);
 
   const loadBoxes = useCallback(async () => {
@@ -27,11 +26,29 @@ export default function BoxesPage() {
     apiClient.get('/items').then((res) => setItems(res.data.items));
   }, []);
 
+  function addItemLine() {
+    setLineItems((prev) => [...prev, { item: '', qty: 1 }]);
+  }
+
+  function removeItemLine(index) {
+    setLineItems((prev) => prev.filter((_, i) => i !== index));
+  }
+
+  function updateItemLine(index, field, value) {
+    setLineItems((prev) => {
+      const next = [...prev];
+      next[index] = { ...next[index], [field]: value };
+      return next;
+    });
+  }
+
   async function handleCreate(e) {
     e.preventDefault();
+    const validItems = lineItems.filter((l) => l.item && l.qty > 0);
+    if (validItems.length === 0) return;
     const res = await apiClient.post('/boxes', {
       destinationStore,
-      items: [{ item: lineItem, qty: Number(lineQty) }],
+      items: validItems,
     });
     const storeName = stores.find((s) => s._id === destinationStore)?.name || '';
     setNewBoxQr({
@@ -39,8 +56,7 @@ export default function BoxesPage() {
       dataUrl: res.data.qrDataUrl,
       to: storeName,
     });
-    setLineItem('');
-    setLineQty('');
+    setLineItems([{ item: '', qty: 1 }]);
     loadBoxes();
   }
 
@@ -87,30 +103,51 @@ export default function BoxesPage() {
       <div className="form-card">
         <form onSubmit={handleCreate}>
           <h2>Create box</h2>
-        <label htmlFor="box-store">Destination store</label>
-        <select id="box-store" value={destinationStore} onChange={(e) => setDestinationStore(e.target.value)} required>
-          <option value="">Select a store</option>
-          {stores.map((store) => (
-            <option key={store._id} value={store._id}>
-              {store.name}
-            </option>
+          <label htmlFor="box-store">Destination store</label>
+          <select id="box-store" value={destinationStore} onChange={(e) => setDestinationStore(e.target.value)} required>
+            <option value="">Select a store</option>
+            {stores.map((store) => (
+              <option key={store._id} value={store._id}>
+                {store.name}
+              </option>
+            ))}
+          </select>
+
+          <label>Items</label>
+          {lineItems.map((line, idx) => (
+            <div key={idx} className="flex gap-sm mb-sm">
+              <select
+                value={line.item}
+                onChange={(e) => updateItemLine(idx, 'item', e.target.value)}
+                required
+                style={{ flex: 2 }}
+              >
+                <option value="">Select an item</option>
+                {items.map((item) => (
+                  <option key={item._id} value={item._id}>
+                    {item.name} ({item.sku})
+                  </option>
+                ))}
+              </select>
+              <input
+                type="number"
+                min="1"
+                value={line.qty}
+                onChange={(e) => updateItemLine(idx, 'qty', parseInt(e.target.value) || 1)}
+                style={{ width: 80 }}
+              />
+              {lineItems.length > 1 && (
+                <button type="button" className="btn-danger btn-sm" onClick={() => removeItemLine(idx)}>
+                  Hapus
+                </button>
+              )}
+            </div>
           ))}
-        </select>
+          <button type="button" className="btn-success btn-sm" onClick={addItemLine}>+ Tambah Item</button>
 
-        <label htmlFor="box-item">Item</label>
-        <select id="box-item" value={lineItem} onChange={(e) => setLineItem(e.target.value)} required>
-          <option value="">Select an item</option>
-          {items.map((item) => (
-            <option key={item._id} value={item._id}>
-              {item.name}
-            </option>
-          ))}
-        </select>
-
-        <label htmlFor="box-qty">Qty</label>
-        <input id="box-qty" type="number" min="1" value={lineQty} onChange={(e) => setLineQty(e.target.value)} required />
-
-        <button type="submit">Create box</button>
+          <div className="form-actions">
+            <button type="submit">Create box</button>
+          </div>
         </form>
       </div>
 
