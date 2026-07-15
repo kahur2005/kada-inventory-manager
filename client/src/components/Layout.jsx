@@ -18,6 +18,7 @@ const NAV_ITEMS = {
     { to: '/warehouse/boxes', label: 'Boxes' },
     { to: '/warehouse/assign', label: 'Assign' },
     { to: '/warehouse/tracking', label: 'Tracking' },
+    { to: '/warehouse/history', label: 'History' },
   ],
   store_admin: [
     { to: '/store/scan', label: 'Scan' },
