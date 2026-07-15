@@ -13,6 +13,7 @@ import StoresPage from './pages/admin/StoresPage';
 import WarehouseStockPage from './pages/admin/WarehouseStockPage';
 import AlertsPage from './pages/warehouse/AlertsPage';
 import WarehouseStockClientPage from './pages/warehouse/StockPage';
+import WarehouseDashboardPage from './pages/warehouse/DashboardPage';
 import BoxesPage from './pages/warehouse/BoxesPage';
 import AssignPage from './pages/warehouse/AssignPage';
 import TrackingPage from './pages/warehouse/TrackingPage';
@@ -49,6 +50,7 @@ export default function App() {
           </Route>
 
           <Route element={<ProtectedRoute allowedRoles={['warehouse_admin']} />}>
+            <Route path="/warehouse/dashboard" element={<WarehouseDashboardPage />} />
             <Route path="/warehouse/alerts" element={<AlertsPage />} />
             <Route path="/warehouse/stock" element={<WarehouseStockClientPage />} />
             <Route path="/warehouse/boxes" element={<BoxesPage />} />
