@@ -68,6 +68,7 @@ export default function DriverQrPage() {
               <tr>
                 <th>Code</th>
                 <th>Destination</th>
+                <th>Expected arrival</th>
                 <th>Status</th>
               </tr>
             </thead>
@@ -78,6 +79,11 @@ export default function DriverQrPage() {
                   <td>
                     {box.destinationStore?.name || '-'}
                     {box.destinationStore?.address && <div>{box.destinationStore.address}</div>}
+                  </td>
+                  <td>
+                    {box.expectedArrival
+                      ? new Date(box.expectedArrival).toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' })
+                      : '-'}
                   </td>
                   <td>
                     <span className={`badge badge-${box.status === 'IN_TRANSIT' ? 'orange' : 'yellow'}`}>

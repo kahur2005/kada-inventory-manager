@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import Swal from 'sweetalert2';
 import apiClient from '../../api/client';
 import QrScanner from '../../components/QrScanner';
 
@@ -7,8 +8,10 @@ export default function AssignPage() {
   const [checked, setChecked] = useState([]);
   const [drivers, setDrivers] = useState([]);
   const [manualDriverId, setManualDriverId] = useState('');
+  const [expectedArrival, setExpectedArrival] = useState('');
   const [message, setMessage] = useState('');
   const [search, setSearch] = useState('');
+  const [scanning, setScanning] = useState(true);
 
   const loadBoxes = useCallback(async () => {
     const res = await apiClient.get('/boxes', { params: { status: 'PACKED', search, page: 1, limit: 50 } });
@@ -32,38 +35,54 @@ export default function AssignPage() {
     }
   }
 
+  // Returns true on success (stops the scanner); throws on a failed attempt so the
+  // scanner keeps trying for up to 10s before showing a single failure popup.
   const handleDriverScan = useCallback(async (decodedText) => {
     let payload;
     try {
       payload = JSON.parse(decodedText);
     } catch {
-      setMessage('Unrecognized QR code');
-      return;
+      throw new Error('Unrecognized QR code');
     }
     if (payload.type !== 'driver') {
-      setMessage('That QR is not a driver code');
-      return;
+      throw new Error('That QR is not a driver code');
     }
     if (checked.length === 0) {
-      setMessage('Select at least one box first');
-      return;
+      throw new Error('Select at least one box first');
     }
+    let res;
     try {
-      const res = await apiClient.post('/scan/driver', { token: payload.token, boxIds: checked });
-      setMessage(res.data.message);
-      setChecked([]);
-      loadBoxes();
+      res = await apiClient.post('/scan/driver', {
+        token: payload.token,
+        boxIds: checked,
+        expectedArrival: expectedArrival || undefined,
+      });
     } catch (err) {
-      setMessage(err.response?.data?.message || 'Scan failed');
+      throw new Error(err.response?.data?.message || 'Scan failed');
     }
-  }, [checked, loadBoxes]);
+    setChecked([]);
+    setScanning(false);
+    setMessage(res.data.message);
+    loadBoxes();
+    await Swal.fire({ icon: 'success', title: 'Driver assigned', text: res.data.message });
+    return true;
+  }, [checked, expectedArrival, loadBoxes]);
+
+  function handleScanFail(err) {
+    setScanning(false);
+    Swal.fire({ icon: 'error', title: 'Scan failed', text: err?.message || 'Could not read a valid QR code' });
+  }
 
   async function handleManualAssign() {
     for (const boxId of checked) {
-      await apiClient.post(`/boxes/${boxId}/assign`, { driverId: manualDriverId });
+      await apiClient.post(`/boxes/${boxId}/assign`, {
+        driverId: manualDriverId,
+        expectedArrival: expectedArrival || undefined,
+      });
     }
     setChecked([]);
     loadBoxes();
+    setMessage('Boxes assigned');
   }
 
   return (
@@ -130,8 +149,24 @@ export default function AssignPage() {
       </div>
 
       <div className="form-card">
+        <label htmlFor="expected-arrival">Expected arrival (optional)</label>
+        <input
+          id="expected-arrival"
+          type="datetime-local"
+          value={expectedArrival}
+          onChange={(e) => setExpectedArrival(e.target.value)}
+        />
+
         <h2>Scan driver QR</h2>
-        <QrScanner onScan={handleDriverScan} onError={() => setMessage('Camera unavailable — use the manual dropdown below')} />
+        {scanning ? (
+          <QrScanner
+            onScan={handleDriverScan}
+            onFail={handleScanFail}
+            onError={() => setMessage('Camera unavailable — use the manual dropdown below')}
+          />
+        ) : (
+          <button type="button" onClick={() => setScanning(true)}>Scan again</button>
+        )}
 
         <h2>Manual fallback</h2>
         <label htmlFor="manual-driver">Manual driver</label>

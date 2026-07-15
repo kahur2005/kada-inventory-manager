@@ -21,6 +21,7 @@ const boxSchema = new mongoose.Schema(
       default: 'PACKED',
     },
     assignedDriver: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
+    expectedArrival: { type: Date, default: null },
   },
   { timestamps: true }
 );

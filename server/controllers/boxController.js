@@ -134,12 +134,20 @@ async function assignDriverManual(req, res) {
     return res.status(404).json({ message: 'Box not found' });
   }
 
-  const { driverId } = req.body;
+  const { driverId, expectedArrival } = req.body;
   if (!driverId) return res.status(400).json({ message: 'driverId is required' });
 
   // Validate driverId body param is a valid ObjectId
   if (!mongoose.Types.ObjectId.isValid(driverId)) {
     return res.status(400).json({ message: 'driverId must be a valid id' });
+  }
+
+  let expectedArrivalDate;
+  if (expectedArrival) {
+    expectedArrivalDate = new Date(expectedArrival);
+    if (Number.isNaN(expectedArrivalDate.getTime())) {
+      return res.status(400).json({ message: 'expectedArrival is not a valid date' });
+    }
   }
 
   const driver = await User.findOne({ _id: driverId, role: 'driver' });
@@ -150,6 +158,7 @@ async function assignDriverManual(req, res) {
 
   box.status = 'ASSIGNED';
   box.assignedDriver = driver._id;
+  if (expectedArrivalDate) box.expectedArrival = expectedArrivalDate;
   await box.save();
   await HandoverLog.create({
     box: box._id,

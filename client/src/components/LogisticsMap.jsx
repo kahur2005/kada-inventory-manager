@@ -1,5 +1,5 @@
-import { useEffect } from "react";
-import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
+import { useEffect, useState } from "react";
+import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 
@@ -24,13 +24,6 @@ const driverIcon = new L.DivIcon({
   className: "",
 });
 
-const STATUS_LABEL = {
-  idle: "Idle",
-  "on-route": "Sedang Dalam Perjalanan",
-  delivering: "Sedang Mengantar",
-  offline: "Offline",
-};
-
 function FlyToDriver({ driver }) {
   const map = useMap();
   useEffect(() => {
@@ -41,7 +34,58 @@ function FlyToDriver({ driver }) {
   return null;
 }
 
-export default function LogisticsMap({ locations, selectedDriverId }) {
+// Fetches the driving route from the selected driver to their destination store,
+// draws it, and reports distance/duration back to the parent for ETA display.
+function DriverRoute({ driver, onRouteInfo }) {
+  const hasRoute =
+    driver &&
+    driver.lat != null &&
+    driver.lng != null &&
+    driver.destination?.lat != null &&
+    driver.destination?.lng != null;
+
+  const originKey = hasRoute ? `${driver.lat},${driver.lng}` : null;
+  const destKey = hasRoute ? `${driver.destination.lat},${driver.destination.lng}` : null;
+
+  const [coords, setCoords] = useState([]);
+
+  useEffect(() => {
+    if (!hasRoute) {
+      setCoords([]);
+      onRouteInfo?.(null);
+      return;
+    }
+    let cancelled = false;
+    const url = `https://router.project-osrm.org/route/v1/driving/${driver.lng},${driver.lat};${driver.destination.lng},${driver.destination.lat}?overview=full&geometries=geojson`;
+    fetch(url)
+      .then((res) => res.json())
+      .then((data) => {
+        if (cancelled) return;
+        const route = data.routes?.[0];
+        if (route) {
+          setCoords(route.geometry.coordinates.map(([lng, lat]) => [lat, lng]));
+          onRouteInfo?.({ duration: route.duration, distance: route.distance });
+        } else {
+          setCoords([]);
+          onRouteInfo?.(null);
+        }
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setCoords([]);
+        onRouteInfo?.(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [originKey, destKey]);
+
+  if (coords.length === 0) return null;
+  return <Polyline positions={coords} pathOptions={{ color: "#2563eb", weight: 5, opacity: 0.8 }} />;
+}
+
+export default function LogisticsMap({ locations, selectedDriverId, onRouteInfo }) {
   const center = [-6.2, 106.8];
   const selectedDriver = selectedDriverId
     ? locations.drivers.find((d) => d.id === selectedDriverId)
@@ -59,6 +103,7 @@ export default function LogisticsMap({ locations, selectedDriverId }) {
       />
 
       {selectedDriver && <FlyToDriver driver={selectedDriver} />}
+      {selectedDriver && <DriverRoute driver={selectedDriver} onRouteInfo={onRouteInfo} />}
 
       {locations.warehouses.map((w) => (
         <Marker key={w.id} position={[w.lat, w.lng]} icon={warehouseIcon}>
@@ -94,8 +139,12 @@ export default function LogisticsMap({ locations, selectedDriverId }) {
             <strong>Driver</strong>
             <br />
             {d.name}
-            <br />
-            <small>Status: {STATUS_LABEL[d.status] || d.status}</small>
+            {d.destination?.name && (
+              <>
+                <br />
+                <small>Tujuan: {d.destination.name}</small>
+              </>
+            )}
             <br />
             <small>Kecepatan: {d.speedKph} km/h</small>
           </Popup>

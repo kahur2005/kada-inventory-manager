@@ -146,7 +146,7 @@ export default function WarehouseDashboardPage() {
               <YAxis label={{ value: 'Minutes', angle: -90, position: 'insideLeft', fontSize: 13 }} />
               <Tooltip contentStyle={{ borderRadius: 12, border: '1px solid var(--border)' }} />
               <Legend />
-              <Bar dataKey="Estimated (min)" fill="#6366f1" radius={[6, 6, 0, 0]} />
+              <Bar dataKey="Estimated (min)" fill="#2f80ed" radius={[6, 6, 0, 0]} />
               <Bar dataKey="Actual (min)" fill="#10b981" radius={[6, 6, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
@@ -218,7 +218,7 @@ export default function WarehouseDashboardPage() {
                   <XAxis dataKey="date" tick={{ fontSize: 12 }} />
                   <YAxis label={{ value: 'Qty', angle: -90, position: 'insideLeft', fontSize: 13 }} />
                   <Tooltip contentStyle={{ borderRadius: 12, border: '1px solid var(--border)' }} />
-                  <Line type="monotone" dataKey="qty" stroke="#6366f1" strokeWidth={2} dot={{ r: 4 }} name="Current Qty" />
+                  <Line type="monotone" dataKey="qty" stroke="#2f80ed" strokeWidth={2} dot={{ r: 4 }} name="Current Qty" />
                 </LineChart>
               </ResponsiveContainer>
             )}
@@ -281,7 +281,7 @@ export default function WarehouseDashboardPage() {
                   <YAxis label={{ value: 'Qty', angle: -90, position: 'insideLeft', fontSize: 13 }} />
                   <Tooltip contentStyle={{ borderRadius: 12, border: '1px solid var(--border)' }} />
                   {storeItemMeta?.maxLevel > 0 && (
-                    <ReferenceLine y={storeItemMeta.maxLevel} stroke="#6366f1" strokeDasharray="5 5" label={{ value: 'Max', position: 'right', fontSize: 12, fill: '#6366f1' }} />
+                    <ReferenceLine y={storeItemMeta.maxLevel} stroke="#2f80ed" strokeDasharray="5 5" label={{ value: 'Max', position: 'right', fontSize: 12, fill: '#2f80ed' }} />
                   )}
                   {storeItemMeta?.threshold > 0 && (
                     <ReferenceLine y={storeItemMeta.threshold} stroke="#ef4444" strokeDasharray="5 5" label={{ value: 'Min/Reorder', position: 'right', fontSize: 12, fill: '#ef4444' }} />

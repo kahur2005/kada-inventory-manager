@@ -2,6 +2,7 @@ const express = require("express");
 const Warehouse = require("../models/Warehouse");
 const Store = require("../models/Store");
 const DriverLocation = require("../models/DriverLocation");
+const Box = require("../models/Box");
 const { authRequired, requireRole } = require("../middleware/auth");
 
 const router = express.Router();
@@ -11,16 +12,31 @@ router.use(authRequired);
 
 router.get("/locations", requireRole("superadmin", "warehouse_admin"), async (req, res) => {
   try {
-    const [warehouses, stores, drivers] = await Promise.all([
+    const [warehouses, stores, drivers, activeBoxes] = await Promise.all([
       Warehouse.find().lean(),
       Store.find().lean(),
       DriverLocation.find().populate("driver", "name").lean(),
+      Box.find({ assignedDriver: { $ne: null }, status: { $in: ["ASSIGNED", "IN_TRANSIT"] } })
+        .populate("destinationStore", "name coords")
+        .select("assignedDriver destinationStore expectedArrival status updatedAt")
+        .lean(),
     ]);
+
+    // Pick the most recent active box per driver as their current destination.
+    const destinationByDriver = new Map();
+    for (const box of activeBoxes) {
+      const driverId = box.assignedDriver?.toString();
+      if (!driverId || !box.destinationStore) continue;
+      const existing = destinationByDriver.get(driverId);
+      if (!existing || new Date(box.updatedAt) > new Date(existing.updatedAt)) {
+        destinationByDriver.set(driverId, box);
+      }
+    }
 
     res.json({
       warehouses: warehouses.map(toWarehouseDTO),
       stores: stores.map(toStoreDTO),
-      drivers: drivers.map(toDriverDTO),
+      drivers: drivers.map((d) => toDriverDTO(d, destinationByDriver)),
     });
   } catch (err) {
     console.error("Gagal memuat data lokasi:", err);
@@ -101,9 +117,12 @@ function toStoreDTO(doc) {
   return { id: doc._id.toString(), name: doc.name, lat: doc.coords?.lat, lng: doc.coords?.lng, address: doc.address };
 }
 
-function toDriverDTO(doc) {
+function toDriverDTO(doc, destinationByDriver) {
+  const id = doc.driver?._id?.toString() || doc.driver?.toString();
+  const activeBox = destinationByDriver?.get(id);
+  const store = activeBox?.destinationStore;
   return {
-    id: doc.driver?._id?.toString() || doc.driver?.toString(),
+    id,
     name: doc.driver?.name || doc.name,
     lat: doc.coords?.lat,
     lng: doc.coords?.lng,
@@ -111,6 +130,11 @@ function toDriverDTO(doc) {
     speedKph: doc.speedKph,
     status: doc.status,
     lastUpdated: doc.updatedAt,
+    destination:
+      store && store.coords?.lat != null && store.coords?.lng != null
+        ? { name: store.name, lat: store.coords.lat, lng: store.coords.lng }
+        : null,
+    expectedArrival: activeBox?.expectedArrival || null,
   };
 }
 

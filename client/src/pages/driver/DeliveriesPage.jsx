@@ -92,6 +92,11 @@ export default function DeliveriesPage() {
                   {box.destinationStore?.address && (
                     <span className="delivery-item-address">{box.destinationStore.address}</span>
                   )}
+                  {box.expectedArrival && (
+                    <span className="delivery-item-address">
+                      Expected arrival: {new Date(box.expectedArrival).toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' })}
+                    </span>
+                  )}
                 </div>
                 <div className="flex items-center gap-sm">
                   {box.destinationStore?.coords?.lat != null && (

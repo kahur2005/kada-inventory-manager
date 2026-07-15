@@ -5,9 +5,17 @@ const HandoverLog = require('../models/HandoverLog');
 const StoreStock = require('../models/StoreStock');
 
 async function scanDriverAssign(req, res) {
-  const { token, boxIds } = req.body;
+  const { token, boxIds, expectedArrival } = req.body;
   if (!token || !Array.isArray(boxIds) || boxIds.length === 0) {
     return res.status(400).json({ message: 'token and at least one boxId are required' });
+  }
+
+  let expectedArrivalDate;
+  if (expectedArrival) {
+    expectedArrivalDate = new Date(expectedArrival);
+    if (Number.isNaN(expectedArrivalDate.getTime())) {
+      return res.status(400).json({ message: 'expectedArrival is not a valid date' });
+    }
   }
 
   // Validate that all boxIds are well-formed ObjectIds
@@ -28,7 +36,9 @@ async function scanDriverAssign(req, res) {
     return res.status(400).json({ message: 'One or more boxes are not eligible for assignment (wrong warehouse or not PACKED)' });
   }
 
-  await Box.updateMany({ _id: { $in: boxIds } }, { status: 'ASSIGNED', assignedDriver: driver._id });
+  const boxUpdate = { status: 'ASSIGNED', assignedDriver: driver._id };
+  if (expectedArrivalDate) boxUpdate.expectedArrival = expectedArrivalDate;
+  await Box.updateMany({ _id: { $in: boxIds } }, boxUpdate);
   await HandoverLog.create({
     actor: req.user.id,
     action: 'DRIVER_ASSIGNED',

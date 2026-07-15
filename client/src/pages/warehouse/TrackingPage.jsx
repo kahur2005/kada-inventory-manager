@@ -1,11 +1,27 @@
 import { useState, useEffect } from "react";
 import apiClient from "../../api/client";
 import LogisticsMap from "../../components/LogisticsMap";
-import DriverTripToggle from "../../components/DriverTripToggle";
+
+function formatEta(seconds) {
+  if (seconds == null) return null;
+  const mins = Math.round(seconds / 60);
+  if (mins < 60) return `${mins} menit`;
+  const h = Math.floor(mins / 60);
+  const m = mins % 60;
+  return `${h} jam ${m} menit`;
+}
+
+function formatArrival(value) {
+  if (!value) return null;
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return null;
+  return d.toLocaleString("id-ID", { dateStyle: "medium", timeStyle: "short" });
+}
 
 export default function TrackingPage() {
   const [locations, setLocations] = useState({ warehouses: [], stores: [], drivers: [] });
   const [selectedDriver, setSelectedDriver] = useState("");
+  const [routeInfo, setRouteInfo] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -23,14 +39,10 @@ export default function TrackingPage() {
     }
   }
 
-  async function handleStatusChange(status) {
-    await apiClient.post(`/tracking/drivers/${selectedDriver}/status`, { status });
-    loadLocations();
-  }
-
   if (loading) return <div className="loading">Loading...</div>;
 
   const currentDriver = locations.drivers.find((d) => d.id === selectedDriver);
+  const expectedArrival = formatArrival(currentDriver?.expectedArrival);
 
   return (
     <div className="tracking-layout">
@@ -41,21 +53,34 @@ export default function TrackingPage() {
           <label>Pilih Driver</label>
           <select
             value={selectedDriver}
-            onChange={(e) => setSelectedDriver(e.target.value)}
+            onChange={(e) => {
+              setRouteInfo(null);
+              setSelectedDriver(e.target.value);
+            }}
           >
             <option value="">-- Pilih Driver --</option>
             {locations.drivers.map((d) => (
-              <option key={d.id} value={d.id}>{d.name} ({d.status})</option>
+              <option key={d.id} value={d.id}>{d.name}</option>
             ))}
           </select>
         </div>
 
         {currentDriver && (
-          <DriverTripToggle
-            driverId={currentDriver.id}
-            currentStatus={currentDriver.status}
-            onStatusChange={handleStatusChange}
-          />
+          <div className="tracking-stats">
+            <p>Tujuan: <strong>{currentDriver.destination?.name || "—"}</strong></p>
+            {expectedArrival && (
+              <p>Perkiraan tiba: <strong>{expectedArrival}</strong></p>
+            )}
+            {currentDriver.destination && (
+              <p>
+                Estimasi rute:{" "}
+                <strong>{routeInfo?.duration != null ? formatEta(routeInfo.duration) : "Menghitung..."}</strong>
+              </p>
+            )}
+            {currentDriver.destination && routeInfo?.distance != null && (
+              <p>Jarak: <strong>{(routeInfo.distance / 1000).toFixed(1)} km</strong></p>
+            )}
+          </div>
         )}
 
         <div className="tracking-stats">
@@ -66,7 +91,11 @@ export default function TrackingPage() {
       </div>
 
       <div className="tracking-map">
-        <LogisticsMap locations={locations} selectedDriverId={selectedDriver} />
+        <LogisticsMap
+          locations={locations}
+          selectedDriverId={selectedDriver}
+          onRouteInfo={setRouteInfo}
+        />
       </div>
     </div>
   );

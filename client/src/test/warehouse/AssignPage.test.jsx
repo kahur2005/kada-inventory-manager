@@ -4,6 +4,7 @@ import AssignPage from '../../pages/warehouse/AssignPage';
 import apiClient from '../../api/client';
 
 vi.mock('../../api/client');
+vi.mock('sweetalert2', () => ({ default: { fire: vi.fn().mockResolvedValue({}) } }));
 
 let scannerOnScan;
 vi.mock('../../components/QrScanner', () => ({

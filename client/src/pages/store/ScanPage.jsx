@@ -5,35 +5,47 @@ import QrScanner from '../../components/QrScanner';
 
 export default function ScanPage() {
   const [manualCode, setManualCode] = useState('');
+  const [scanning, setScanning] = useState(true);
 
   async function deliverBox(payload) {
-    try {
-      const res = await apiClient.post('/scan/box', payload);
-      const itemsList = res.data.items.map((i) => `${i.qty}× ${i.name}`).join(', ') || 'no items';
-      await Swal.fire({ icon: 'success', title: 'Box delivered', text: itemsList });
-    } catch (err) {
-      await Swal.fire({ icon: 'error', title: 'Scan failed', text: err.response?.data?.message || 'Something went wrong' });
-    }
+    const res = await apiClient.post('/scan/box', payload);
+    const itemsList = res.data.items.map((i) => `${i.qty}× ${i.name}`).join(', ') || 'no items';
+    await Swal.fire({ icon: 'success', title: 'Box delivered', text: itemsList });
   }
 
+  // Returns true on success (stops the scanner); throws on a failed attempt so the
+  // scanner keeps trying for up to 10s before showing a single failure popup.
   async function handleScan(decodedText) {
     let parsed;
     try {
       parsed = JSON.parse(decodedText);
     } catch {
-      await Swal.fire({ icon: 'error', title: 'Unrecognized QR code' });
-      return;
+      throw new Error('Unrecognized QR code');
     }
-    if (parsed.type === 'box') {
-      deliverBox({ token: parsed.token });
-    } else {
-      await Swal.fire({ icon: 'error', title: 'That QR is not a recognized code' });
+    if (parsed.type !== 'box') {
+      throw new Error('That QR is not a recognized code');
     }
+    try {
+      await deliverBox({ token: parsed.token });
+    } catch (err) {
+      throw new Error(err.response?.data?.message || 'Something went wrong');
+    }
+    setScanning(false);
+    return true;
   }
 
-  function handleManualSubmit(e) {
+  function handleFail(err) {
+    setScanning(false);
+    Swal.fire({ icon: 'error', title: 'Scan failed', text: err?.message || 'Could not read a valid QR code' });
+  }
+
+  async function handleManualSubmit(e) {
     e.preventDefault();
-    deliverBox({ code: manualCode });
+    try {
+      await deliverBox({ code: manualCode });
+    } catch (err) {
+      await Swal.fire({ icon: 'error', title: 'Scan failed', text: err.response?.data?.message || 'Something went wrong' });
+    }
     setManualCode('');
   }
 
@@ -44,7 +56,11 @@ export default function ScanPage() {
         <div className="card-header">
           <h3>Camera Scanner</h3>
         </div>
-        <QrScanner onScan={handleScan} onError={() => {}} />
+        {scanning ? (
+          <QrScanner onScan={handleScan} onFail={handleFail} onError={() => {}} />
+        ) : (
+          <button type="button" onClick={() => setScanning(true)}>Scan again</button>
+        )}
       </div>
 
       <div className="form-card">

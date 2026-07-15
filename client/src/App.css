@@ -111,10 +111,15 @@
 .app-shell > nav {
   width: 260px;
   min-width: 260px;
-  background: linear-gradient(180deg, #1e1b4b 0%, #18181b 100%);
+  background: var(--surface);
   display: flex;
   flex-direction: column;
-  border-right: 1px solid rgba(255, 255, 255, 0.06);
+  border-right: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  align-self: flex-start;
+  height: 100vh;
+  overflow-y: auto;
 }
 
 .app-shell > nav::before {
@@ -125,15 +130,10 @@
   height: 68px;
   font-size: 1.375rem;
   font-weight: 800;
-  color: #fff;
+  color: var(--primary-deep);
   letter-spacing: -0.04em;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  border-bottom: 1px solid var(--border);
   flex-shrink: 0;
-  background: linear-gradient(
-    135deg,
-    rgba(99, 102, 241, 0.15) 0%,
-    transparent 60%
-  );
 }
 
 .app-shell > nav ul {
@@ -151,7 +151,7 @@
   gap: 12px;
   padding: 12px 16px;
   border-radius: var(--r);
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--text-muted);
   font-weight: 500;
   font-size: 0.9rem;
   transition: all 0.2s ease;
@@ -173,21 +173,16 @@
 }
 
 .app-shell > nav ul li a:hover {
-  background: rgba(255, 255, 255, 0.07);
-  color: rgba(255, 255, 255, 0.95);
+  background: var(--bg-subtle);
+  color: var(--text-heading);
   text-decoration: none;
 }
 
 .app-shell > nav ul li a.active,
 .app-shell > nav ul li a:focus {
-  background: linear-gradient(
-    135deg,
-    rgba(99, 102, 241, 0.35) 0%,
-    rgba(139, 92, 246, 0.25) 100%
-  );
-  color: #fff;
+  background: var(--primary-light);
+  color: var(--primary-deep);
   font-weight: 600;
-  box-shadow: 0 0 20px rgba(99, 102, 241, 0.15);
   border-left: 3px solid var(--primary);
   padding-left: 13px;
 }
@@ -196,12 +191,29 @@
   transform: translateY(-50%) scaleY(1);
 }
 
+.app-shell > nav .store-info {
+  margin: 0 16px 16px;
+  padding: 12px 14px;
+  background: var(--bg-subtle);
+  border-radius: var(--r);
+  font-size: 0.8125rem;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.app-shell > nav .store-info strong {
+  display: block;
+  color: var(--text-heading);
+  font-size: 0.875rem;
+  margin-bottom: 2px;
+}
+
 .app-shell > nav > button {
   margin: 12px 16px 20px;
   padding: 11px 0;
   background: transparent;
-  color: rgba(255, 255, 255, 0.4);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--text-muted);
+  border: 1px solid var(--border);
   border-radius: var(--r);
   font-size: 0.875rem;
   font-weight: 500;
@@ -212,9 +224,9 @@
 }
 
 .app-shell > nav > button:hover {
-  background: rgba(239, 68, 68, 0.12);
-  color: #fca5a5;
-  border-color: rgba(239, 68, 68, 0.25);
+  background: var(--danger-light);
+  color: var(--danger-hover);
+  border-color: #fecaca;
 }
 
 /* --- Main Content --- */
@@ -375,14 +387,14 @@ form:has(> h1:first-child):not(:has(> table)) > button:not([type]) {
     background 0.2s,
     transform 0.1s,
     box-shadow 0.2s;
-  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+  box-shadow: 0 4px 12px rgba(47, 128, 237, 0.3);
   letter-spacing: 0.01em;
 }
 
 form:has(> h1:first-child):not(:has(> table)) > button[type="submit"]:hover,
 form:has(> h1:first-child):not(:has(> table)) > button:not([type]):hover {
   background: var(--primary-gradient-hover);
-  box-shadow: 0 6px 20px rgba(99, 102, 241, 0.4);
+  box-shadow: 0 6px 20px rgba(47, 128, 237, 0.4);
 }
 
 form:has(> h1:first-child):not(:has(> table)) > button[type="submit"]:active,
@@ -469,13 +481,13 @@ button[type="submit"],
   background: var(--primary-gradient);
   color: #fff;
   border-color: transparent;
-  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.25);
+  box-shadow: 0 2px 8px rgba(47, 128, 237, 0.25);
 }
 
 button[type="submit"]:hover:not(:disabled),
 .btn-primary:hover:not(:disabled) {
   background: var(--primary-gradient-hover);
-  box-shadow: 0 4px 16px rgba(99, 102, 241, 0.35);
+  box-shadow: 0 4px 16px rgba(47, 128, 237, 0.35);
   transform: translateY(-1px);
 }
 
@@ -525,22 +537,22 @@ button[aria-label*="Delete"]:hover:not(:disabled) {
 .btn-nav {
   background: linear-gradient(
     135deg,
-    rgba(99, 102, 241, 0.1) 0%,
-    rgba(139, 92, 246, 0.05) 100%
+    rgba(47, 128, 237, 0.1) 0%,
+    rgba(86, 204, 242, 0.05) 100%
   );
   color: var(--primary);
-  border-color: rgba(99, 102, 241, 0.3);
+  border-color: rgba(47, 128, 237, 0.3);
 }
 
 .btn-nav:hover:not(:disabled) {
   background: linear-gradient(
     135deg,
-    rgba(99, 102, 241, 0.2) 0%,
-    rgba(139, 92, 246, 0.1) 100%
+    rgba(47, 128, 237, 0.2) 0%,
+    rgba(86, 204, 242, 0.1) 100%
   );
-  border-color: rgba(99, 102, 241, 0.5);
+  border-color: rgba(47, 128, 237, 0.5);
   color: var(--primary-hover);
-  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.15);
+  box-shadow: 0 2px 8px rgba(47, 128, 237, 0.15);
 }
 
 /* Pill badge */
@@ -894,6 +906,11 @@ td input[type="number"] {
   margin-top: 4px;
   font-weight: 400;
   color: var(--text-muted);
+}
+
+[data-theme="dark"] .alert-card {
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.14) 0%, var(--surface) 100%);
+  border-color: rgba(239, 68, 68, 0.38);
 }
 
 /* ============================================
