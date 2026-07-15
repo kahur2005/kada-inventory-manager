@@ -8,11 +8,12 @@ export default function AssignPage() {
   const [drivers, setDrivers] = useState([]);
   const [manualDriverId, setManualDriverId] = useState('');
   const [message, setMessage] = useState('');
+  const [search, setSearch] = useState('');
 
   const loadBoxes = useCallback(async () => {
-    const res = await apiClient.get('/boxes', { params: { status: 'PACKED', search: '', page: 1, limit: 50 } });
+    const res = await apiClient.get('/boxes', { params: { status: 'PACKED', search, page: 1, limit: 50 } });
     setBoxes(res.data.boxes);
-  }, []);
+  }, [search]);
 
   useEffect(() => {
     loadBoxes();
@@ -23,7 +24,15 @@ export default function AssignPage() {
     setChecked((prev) => (prev.includes(boxId) ? prev.filter((id) => id !== boxId) : [...prev, boxId]));
   }
 
-  async function handleDriverScan(decodedText) {
+  function toggleAll() {
+    if (checked.length === boxes.length) {
+      setChecked([]);
+    } else {
+      setChecked(boxes.map((b) => b._id));
+    }
+  }
+
+  const handleDriverScan = useCallback(async (decodedText) => {
     let payload;
     try {
       payload = JSON.parse(decodedText);
@@ -35,11 +44,19 @@ export default function AssignPage() {
       setMessage('That QR is not a driver code');
       return;
     }
-    const res = await apiClient.post('/scan/driver', { token: payload.token, boxIds: checked });
-    setMessage(res.data.message);
-    setChecked([]);
-    loadBoxes();
-  }
+    if (checked.length === 0) {
+      setMessage('Select at least one box first');
+      return;
+    }
+    try {
+      const res = await apiClient.post('/scan/driver', { token: payload.token, boxIds: checked });
+      setMessage(res.data.message);
+      setChecked([]);
+      loadBoxes();
+    } catch (err) {
+      setMessage(err.response?.data?.message || 'Scan failed');
+    }
+  }, [checked, loadBoxes]);
 
   async function handleManualAssign() {
     for (const boxId of checked) {
@@ -58,17 +75,57 @@ export default function AssignPage() {
           <h3>Select boxes to assign</h3>
           {checked.length > 0 && <span className="badge badge-blue">{checked.length} selected</span>}
         </div>
+
+        <div className="filter-bar">
+          <div>
+            <label htmlFor="assign-search">Search code</label>
+            <input id="assign-search" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Kode box..." />
+          </div>
+        </div>
+
         {boxes.length === 0 ? (
           <p className="text-muted text-center" style={{ padding: '32px 0' }}>No packed boxes available.</p>
         ) : (
-          <div className="box-checklist">
-            {boxes.map((box) => (
-              <label key={box._id} className="box-checklist-item">
-                <input type="checkbox" aria-label={box.code} checked={checked.includes(box._id)} onChange={() => toggle(box._id)} />
-                <span className="font-mono font-bold">{box.code}</span>
-              </label>
-            ))}
-          </div>
+          <table>
+            <thead>
+              <tr>
+                <th style={{ width: 40 }}>
+                  <input
+                    type="checkbox"
+                    checked={checked.length === boxes.length}
+                    onChange={toggleAll}
+                    aria-label="Select all boxes"
+                  />
+                </th>
+                <th>Kode</th>
+                <th>Toko</th>
+                <th>Items</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {boxes.map((box) => (
+                <tr key={box._id}>
+                  <td>
+                    <input
+                      type="checkbox"
+                      aria-label={box.code}
+                      checked={checked.includes(box._id)}
+                      onChange={() => toggle(box._id)}
+                    />
+                  </td>
+                  <td className="font-mono font-bold">{box.code}</td>
+                  <td>{box.destinationStore?.name}</td>
+                  <td>
+                    {box.items?.map((i) => `${i.qty}x ${i.item?.name}`).join(', ') || '-'}
+                  </td>
+                  <td>
+                    <span className="badge badge-gray">{box.status}</span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         )}
       </div>
 

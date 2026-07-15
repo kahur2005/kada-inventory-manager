@@ -104,7 +104,7 @@ function toStoreDTO(doc) {
 function toDriverDTO(doc) {
   return {
     id: doc.driver?._id?.toString() || doc.driver?.toString(),
-    name: doc.name,
+    name: doc.driver?.name || doc.name,
     lat: doc.coords?.lat,
     lng: doc.coords?.lng,
     heading: doc.heading,

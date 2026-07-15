@@ -1,44 +1,41 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useId } from 'react';
 import { Html5Qrcode } from 'html5-qrcode';
-
-const REGION_ID = 'qr-scanner-region';
 
 export default function QrScanner({ onScan, onError }) {
   const scannerRef = useRef(null);
+  const onScanRef = useRef(onScan);
+  const onErrorRef = useRef(onError);
+  const regionId = useId();
+
+  onScanRef.current = onScan;
+  onErrorRef.current = onError;
 
   useEffect(() => {
-    const scanner = new Html5Qrcode(REGION_ID);
+    const scanner = new Html5Qrcode(regionId);
     scannerRef.current = scanner;
 
     scanner
       .start(
         { facingMode: 'environment' },
         { fps: 10, qrbox: 250 },
-        (decodedText) => onScan(decodedText),
-        () => {} // per-frame "no QR in view" callbacks are expected noise; ignore them
+        (decodedText) => onScanRef.current(decodedText),
+        () => {}
       )
-      .catch((err) => onError?.(err));
+      .catch((err) => onErrorRef.current?.(err));
 
     return () => {
       const safeClear = () => {
         try {
           scanner.clear();
-        } catch {
-          // clear() can throw synchronously if the camera never
-          // successfully started — safe to ignore.
-        }
+        } catch {}
       };
       try {
-        // stop() itself can throw synchronously (not just reject) if the
-        // scanner never reached a running state — e.g. no camera device,
-        // or the component unmounted before start() resolved (React
-        // StrictMode's double effect-invocation in dev triggers this).
         scanner.stop().then(safeClear).catch(safeClear);
       } catch {
         safeClear();
       }
     };
-  }, [onScan, onError]);
+  }, [regionId]);
 
-  return <div id={REGION_ID} style={{ width: 300 }} />;
+  return <div id={regionId} style={{ width: 300 }} />;
 }

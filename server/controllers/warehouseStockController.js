@@ -44,4 +44,28 @@ async function addWarehouseStock(req, res) {
   res.status(201).json({ warehouseStock: row });
 }
 
-module.exports = { listWarehouseStock, addWarehouseStock };
+async function updateWarehouseStock(req, res) {
+  const { id } = req.params;
+  const { qty } = req.body;
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    return res.status(404).json({ message: 'Stock row not found' });
+  }
+  if (qty === undefined || qty < 0) {
+    return res.status(400).json({ message: 'qty must be a non-negative number' });
+  }
+  const row = await WarehouseStock.findByIdAndUpdate(id, { qty }, { new: true }).populate('item', 'name sku unit volumeM3');
+  if (!row) return res.status(404).json({ message: 'Stock row not found' });
+  res.json({ warehouseStock: row });
+}
+
+async function deleteWarehouseStock(req, res) {
+  const { id } = req.params;
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    return res.status(404).json({ message: 'Stock row not found' });
+  }
+  const row = await WarehouseStock.findByIdAndDelete(id);
+  if (!row) return res.status(404).json({ message: 'Stock row not found' });
+  res.json({ message: 'Stock row deleted' });
+}
+
+module.exports = { listWarehouseStock, addWarehouseStock, updateWarehouseStock, deleteWarehouseStock };

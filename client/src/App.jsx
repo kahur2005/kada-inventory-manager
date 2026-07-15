@@ -16,11 +16,11 @@ import WarehouseStockClientPage from './pages/warehouse/StockPage';
 import BoxesPage from './pages/warehouse/BoxesPage';
 import AssignPage from './pages/warehouse/AssignPage';
 import TrackingPage from './pages/warehouse/TrackingPage';
-import ShipmentQrPage from './pages/warehouse/ShipmentQrPage';
 import ScanPage from './pages/store/ScanPage';
 import StoreStockPage from './pages/store/StockPage';
 import HistoryPage from './pages/store/HistoryPage';
 import DeliveriesPage from './pages/driver/DeliveriesPage';
+import DriverQrPage from './pages/driver/DriverQrPage';
 import DashboardPage from './pages/superadmin/DashboardPage';
 
 import './App.css';
@@ -54,7 +54,6 @@ export default function App() {
             <Route path="/warehouse/boxes" element={<BoxesPage />} />
             <Route path="/warehouse/assign" element={<AssignPage />} />
             <Route path="/warehouse/tracking" element={<TrackingPage />} />
-            <Route path="/warehouse/shipments" element={<ShipmentQrPage />} />
           </Route>
 
           <Route element={<ProtectedRoute allowedRoles={['store_admin']} />}>
@@ -65,6 +64,7 @@ export default function App() {
 
           <Route element={<ProtectedRoute allowedRoles={['driver']} />}>
             <Route path="/driver" element={<DeliveriesPage />} />
+            <Route path="/driver/qr" element={<DriverQrPage />} />
           </Route>
         </Route>
       </Routes>

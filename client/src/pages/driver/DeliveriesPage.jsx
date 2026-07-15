@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import apiClient from '../../api/client';
+import DriverMapModal from '../../components/DriverMapModal';
 
 const PING_INTERVAL_MS = 45000;
 const POLL_INTERVAL_MS = 15000;
@@ -8,6 +9,7 @@ export default function DeliveriesPage() {
   const [boxes, setBoxes] = useState([]);
   const [delivering, setDelivering] = useState(false);
   const pingIntervalRef = useRef(null);
+  const [mapBox, setMapBox] = useState(null);
 
   const load = useCallback(async () => {
     const res = await apiClient.get('/boxes', { params: { status: '', search: '', page: 1, limit: 50 } });
@@ -93,14 +95,12 @@ export default function DeliveriesPage() {
                 </div>
                 <div className="flex items-center gap-sm">
                   {box.destinationStore?.coords?.lat != null && (
-                    <a
-                      href={`https://www.openstreetmap.org/?mlat=${box.destinationStore.coords.lat}&mlon=${box.destinationStore.coords.lng}`}
-                      target="_blank"
-                      rel="noreferrer"
+                    <button
                       className="btn-sm"
+                      onClick={() => setMapBox(box)}
                     >
                       Map
-                    </a>
+                    </button>
                   )}
                   {box.status === 'ASSIGNED' && (
                     <button className="btn-success btn-sm" onClick={() => handlePickup(box)}>
@@ -150,6 +150,13 @@ export default function DeliveriesPage() {
             </table>
           </div>
         </div>
+      )}
+
+      {mapBox && (
+        <DriverMapModal
+          destination={mapBox.destinationStore?.coords}
+          onClose={() => setMapBox(null)}
+        />
       )}
     </div>
   );
