@@ -1,5 +1,5 @@
 import { describe, test, expect, vi } from "vitest";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import DashboardPage from "../../pages/superadmin/DashboardPage";
 import apiClient from "../../api/client";
 
@@ -62,10 +62,12 @@ describe("DashboardPage", () => {
     render(<DashboardPage />);
 
     await waitFor(() => expect(screen.getByText(/42%/)).toBeInTheDocument());
-    expect(screen.getByText("5")).toBeInTheDocument();
-    expect(screen.getByText("Delivered")).toBeInTheDocument();
-    expect(screen.getByText("3")).toBeInTheDocument();
-    expect(screen.getByText("Low Stock Alerts")).toBeInTheDocument();
+    const deliveredCard = screen.getByText("Delivered").closest(".stat-card");
+    expect(within(deliveredCard).getByText("5")).toBeInTheDocument();
+    const lowStockCard = screen
+      .getByText("Low Stock Alerts")
+      .closest(".stat-card");
+    expect(within(lowStockCard).getByText("3")).toBeInTheDocument();
     expect(screen.getByText(/BOX_PACKED/)).toBeInTheDocument();
   });
 });

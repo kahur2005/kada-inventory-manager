@@ -246,6 +246,9 @@ export default function UsersPage() {
                 />
               </td>
               <td>
+                <InfoCell user={user} />
+              </td>
+              <td>
                 <button
                   aria-label={`Delete ${user.name}`}
                   onClick={() => handleDelete(user)}
