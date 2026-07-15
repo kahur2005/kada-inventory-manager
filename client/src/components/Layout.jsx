@@ -56,6 +56,12 @@ export default function Layout() {
             </li>
           ))}
         </ul>
+        {user?.role === 'store_admin' && user.store && (
+          <div className="store-info" aria-label="Your store">
+            <strong>{user.store.name}</strong>
+            {user.store.address && <div>{user.store.address}</div>}
+          </div>
+        )}
         {user && <button onClick={logout}>Log out</button>}
       </nav>
       <main>
