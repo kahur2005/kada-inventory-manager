@@ -22,7 +22,8 @@ async function scanDriverAssign(req, res) {
     return res.status(400).json({ message: 'Driver QR not recognized' });
   }
 
-  const boxes = await Box.find({ _id: { $in: boxIds }, warehouse: req.user.warehouse, status: 'PACKED' });
+  const boxes = await Box.find({ _id: { $in: boxIds }, warehouse: req.user.warehouse, status: 'PACKED' })
+    .populate('destinationStore', 'name address');
   if (boxes.length !== boxIds.length) {
     return res.status(400).json({ message: 'One or more boxes are not eligible for assignment (wrong warehouse or not PACKED)' });
   }
@@ -34,7 +35,17 @@ async function scanDriverAssign(req, res) {
     meta: { driver: driver._id.toString(), boxIds },
   });
 
-  res.json({ message: `${boxes.length} box(es) assigned to ${driver.name}`, driver: { id: driver._id.toString(), name: driver.name } });
+  res.json({
+    message: `${boxes.length} box(es) assigned to ${driver.name}`,
+    driver: { id: driver._id.toString(), name: driver.name },
+    boxes: boxes.map((b) => ({
+      id: b._id.toString(),
+      code: b.code,
+      destinationStore: b.destinationStore
+        ? { name: b.destinationStore.name, address: b.destinationStore.address ?? null }
+        : null,
+    })),
+  });
 }
 
 async function scanBox(req, res) {
