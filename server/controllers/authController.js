@@ -2,14 +2,22 @@ const bcrypt = require('bcryptjs');
 const User = require('../models/User');
 const { signToken } = require('../middleware/auth');
 
+function toPublicScope(value) {
+  if (!value) return null;
+  if (value.name !== undefined) {
+    return { id: value._id.toString(), name: value.name, address: value.address ?? null, coords: value.coords ?? null };
+  }
+  return value.toString();
+}
+
 function toPublicUser(user) {
   return {
     id: user._id.toString(),
     name: user.name,
     email: user.email,
     role: user.role,
-    warehouse: user.warehouse ? user.warehouse.toString() : null,
-    store: user.store ? user.store.toString() : null,
+    warehouse: toPublicScope(user.warehouse),
+    store: toPublicScope(user.store),
     driverQrToken: user.role === 'driver' ? user.driverQrToken : null,
   };
 }

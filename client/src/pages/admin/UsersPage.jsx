@@ -17,12 +17,10 @@ function RoleCell({ user, warehouses, stores, onSave }) {
   }, [user]);
 
   const dirty =
-    role !== user.role ||
-    (role === 'warehouse_admin' && warehouseId !== (user.warehouse?.id || '')) ||
+    role !== user.role || (role === 'warehouse_admin' && warehouseId !== (user.warehouse?.id || '')) ||
     (role === 'store_admin' && storeId !== (user.store?.id || ''));
 
-  const scopeMissing =
-    (role === 'warehouse_admin' && !warehouseId) || (role === 'store_admin' && !storeId);
+  const scopeMissing = (role === 'warehouse_admin' && !warehouseId) || (role === 'store_admin' && !storeId);
 
   async function handleSave() {
     if (scopeMissing) return;
@@ -44,13 +42,9 @@ function RoleCell({ user, warehouses, stores, onSave }) {
   }
 
   return (
-    <div className="flex flex-col gap-sm">
-      <select
-        id={`role-${user.id}`}
-        aria-label={`Role for ${user.name}`}
-        value={role}
-        onChange={(e) => setRole(e.target.value)}
-      >
+    <div>
+      <label htmlFor={`role-${user.id}`}>{`Role for ${user.name}`}</label>
+      <select id={`role-${user.id}`} aria-label={`Role for ${user.name}`} value={role} onChange={(e) => setRole(e.target.value)}>
         {ROLES.map((r) => (
           <option key={r} value={r}>
             {r}
@@ -59,49 +53,49 @@ function RoleCell({ user, warehouses, stores, onSave }) {
       </select>
 
       {role === 'warehouse_admin' && (
-        <select
-          id={`warehouse-${user.id}`}
-          aria-label={`Warehouse for ${user.name}`}
-          value={warehouseId}
-          onChange={(e) => setWarehouseId(e.target.value)}
-          required
-        >
-          <option value="">Select warehouse...</option>
-          {warehouses.map((wh) => (
-            <option key={wh._id} value={wh._id}>
-              {wh.name}
-            </option>
-          ))}
-        </select>
+        <>
+          <label htmlFor={`warehouse-${user.id}`}>{`Warehouse for ${user.name}`}</label>
+          <select
+            id={`warehouse-${user.id}`}
+            aria-label={`Warehouse for ${user.name}`}
+            value={warehouseId}
+            onChange={(e) => setWarehouseId(e.target.value)}
+            required
+          >
+            <option value="">Select warehouse…</option>
+            {warehouses.map((wh) => (
+              <option key={wh._id} value={wh._id}>
+                {wh.name}
+              </option>
+            ))}
+          </select>
+        </>
       )}
 
       {role === 'store_admin' && (
-        <select
-          id={`store-${user.id}`}
-          aria-label={`Store for ${user.name}`}
-          value={storeId}
-          onChange={(e) => setStoreId(e.target.value)}
-          required
-        >
-          <option value="">Select store...</option>
-          {stores.map((store) => (
-            <option key={store._id} value={store._id}>
-              {store.name}
-            </option>
-          ))}
-        </select>
+        <>
+          <label htmlFor={`store-${user.id}`}>{`Store for ${user.name}`}</label>
+          <select
+            id={`store-${user.id}`}
+            aria-label={`Store for ${user.name}`}
+            value={storeId}
+            onChange={(e) => setStoreId(e.target.value)}
+            required
+          >
+            <option value="">Select store…</option>
+            {stores.map((store) => (
+              <option key={store._id} value={store._id}>
+                {store.name}
+              </option>
+            ))}
+          </select>
+        </>
       )}
 
-      <div className="flex items-center gap-sm">
-        <button onClick={handleSave} disabled={!dirty || scopeMissing || saving}>
-          Save
-        </button>
-        {scopeMissing && (
-          <p className="text-xs" style={{ color: 'var(--danger)' }} role="alert">
-            Please select a {role === 'warehouse_admin' ? 'warehouse' : 'store'} before saving.
-          </p>
-        )}
-      </div>
+      <button onClick={handleSave} disabled={!dirty || scopeMissing || saving}>
+        Save
+      </button>
+      {scopeMissing && <p role="alert">Please select a {role === 'warehouse_admin' ? 'warehouse' : 'store'} before saving.</p>}
     </div>
   );
 }
@@ -109,34 +103,30 @@ function RoleCell({ user, warehouses, stores, onSave }) {
 function InfoCell({ user }) {
   if (user.role === 'driver') {
     return (
-      <span className="text-sm">
-        {user.driverQrToken ? (
-          <span className="badge badge-green">QR ready</span>
-        ) : (
-          <span className="badge badge-gray">QR not generated</span>
-        )}
+      <span>
+        Driver: {user.name} — {user.driverQrToken ? 'QR ready' : 'QR not generated yet'}
       </span>
     );
   }
   if (user.role === 'store_admin') {
-    if (!user.store) return <span className="text-sm text-muted">Not linked to a store</span>;
+    if (!user.store) return <span>Not linked to a store</span>;
     return (
-      <span className="text-sm">
+      <span>
         {user.store.name}
-        {user.store.address && <small> — {user.store.address}</small>}
+        {user.store.address ? ` — ${user.store.address}` : ''}
       </span>
     );
   }
   if (user.role === 'warehouse_admin') {
-    if (!user.warehouse) return <span className="text-sm text-muted">Not linked to a warehouse</span>;
+    if (!user.warehouse) return <span>Not linked to a warehouse</span>;
     return (
-      <span className="text-sm">
+      <span>
         {user.warehouse.name}
-        {user.warehouse.address && <small> — {user.warehouse.address}</small>}
+        {user.warehouse.address ? ` — ${user.warehouse.address}` : ''}
       </span>
     );
   }
-  return <span className="text-sm text-muted">—</span>;
+  return <span>—</span>;
 }
 
 export default function UsersPage() {
@@ -225,12 +215,7 @@ export default function UsersPage() {
               <td className="font-bold">{user.name}</td>
               <td>{user.email}</td>
               <td>
-                <RoleCell
-                  user={user}
-                  warehouses={warehouses}
-                  stores={stores}
-                  onSave={handleRoleSave}
-                />
+                <RoleCell user={user} warehouses={warehouses} stores={stores} onSave={handleRoleSave} />
               </td>
               <td>
                 <InfoCell user={user} />

@@ -1,0 +1,1222 @@
+{
+  "info": {
+    "_postman_id": "logistiq-api-contract",
+    "name": "LogistiQ API",
+    "description": "Multi-Warehouse Stock & Delivery Tracking System — generated from API_CONTRACT.docx. Base URL prefix: /api. Auth: Authorization: Bearer <jwt>. Import LogistiQ.postman_environment.json alongside this collection.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [],
+  "item": [
+    {
+      "name": "01 - Auth",
+      "description": "",
+      "item": [
+        {
+          "name": "Register",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/register",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "register"
+              ]
+            },
+            "description": "Public. Creates user as \"unassigned\". 201 { token, user }. 400 missing field / email already registered.",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Jane Doe\",\n  \"email\": \"jane@example.com\",\n  \"password\": \"password123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200 || pm.response.code === 201) {",
+                  "  const json = pm.response.json();",
+                  "  if (json.token) pm.environment.set('token', json.token);",
+                  "  if (json.user && json.user.id) pm.environment.set('userId', json.user.id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            },
+            "description": "Public. 200 { token, user }. 400 missing field. 401 Invalid credentials.",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"superadmin@logistiq.test\",\n  \"password\": \"password123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200 || pm.response.code === 201) {",
+                  "  const json = pm.response.json();",
+                  "  if (json.token) pm.environment.set('token', json.token);",
+                  "  if (json.user && json.user.id) pm.environment.set('userId', json.user.id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Current User (me)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "me"
+              ]
+            },
+            "description": "Any logged-in role. 200 { user }. 401 missing/invalid/expired token. 404 User not found."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "02 - Users (admin panel)",
+      "description": "",
+      "item": [
+        {
+          "name": "List Users",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/users?page=1&limit=10&search=",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "users"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1",
+                  "disabled": false
+                },
+                {
+                  "key": "limit",
+                  "value": "10",
+                  "disabled": false
+                },
+                {
+                  "key": "search",
+                  "value": "",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "superadmin only. search matches name or email, case-insensitive. 200 { users, total, page, limit }."
+          },
+          "response": []
+        },
+        {
+          "name": "Create User",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/users",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "users"
+              ]
+            },
+            "description": "superadmin only. role defaults to \"unassigned\"; warehouse required if role=warehouse_admin, store required if role=store_admin. 201 { user }. 400 missing field / bad role / email taken / scope missing.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Warehouse Bob\",\n  \"email\": \"bob@example.com\",\n  \"password\": \"password123\",\n  \"role\": \"warehouse_admin\",\n  \"warehouse\": \"{{warehouseId}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update User Role",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/users/{{userId}}/role",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "users",
+                "{{userId}}",
+                "role"
+              ]
+            },
+            "description": "superadmin only. Same scope rules as POST /users. driverQrToken auto-generated (uuid) first time role=driver. 200 { user }. 400 invalid role/missing scope. 404 User not found.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"role\": \"store_admin\",\n  \"store\": \"{{storeId}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete User",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/users/{{userId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "users",
+                "{{userId}}"
+              ]
+            },
+            "description": "superadmin only. 200 { message: \"User deleted\" }. 404 User not found."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "03 - Items (catalog)",
+      "description": "",
+      "item": [
+        {
+          "name": "List Items",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/items",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "items"
+              ]
+            },
+            "description": "Any logged-in role. 200 { items: [{ _id, name, sku, unit, volumeM3 }] } sorted by name asc. 401."
+          },
+          "response": []
+        },
+        {
+          "name": "Create Item",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/items",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "items"
+              ]
+            },
+            "description": "superadmin only. unit enum: pcs|box|kg (default pcs). sku upper-cased + unique. 201 { item }. 400 missing field / sku exists.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Indomie Goreng\",\n  \"sku\": \"ITM-001\",\n  \"unit\": \"pcs\",\n  \"volumeM3\": 0.0002\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Item",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/items/{{itemId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "items",
+                "{{itemId}}"
+              ]
+            },
+            "description": "superadmin only. Partial update. 200 { item }. 404 Item not found.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Indomie Goreng Spesial\",\n  \"unit\": \"box\",\n  \"volumeM3\": 0.0025\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Item",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/items/{{itemId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "items",
+                "{{itemId}}"
+              ]
+            },
+            "description": "superadmin only. 200 { message: \"Item deleted\" }. 404 Item not found."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "04 - Stores",
+      "description": "",
+      "item": [
+        {
+          "name": "List Stores",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/stores",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "stores"
+              ]
+            },
+            "description": "superadmin, store_admin, warehouse_admin. store_admin sees only own linked store; superadmin/warehouse_admin see all. 200 { stores }. 401/403."
+          },
+          "response": []
+        },
+        {
+          "name": "Create Store",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/stores",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "stores"
+              ]
+            },
+            "description": "superadmin only. 201 { store }. 400 missing name/address.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Store Alfa Kemang\",\n  \"address\": \"Jl. Kemang Raya No. 1\",\n  \"coords\": {\n    \"lat\": -6.2608,\n    \"lng\": 106.8133\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Store",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/stores/{{storeId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "stores",
+                "{{storeId}}"
+              ]
+            },
+            "description": "superadmin only. 200 { store }. 404 Store not found.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Store Alfa Kemang Updated\",\n  \"address\": \"Jl. Kemang Raya No. 2\",\n  \"coords\": {\n    \"lat\": -6.261,\n    \"lng\": 106.8135\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Store",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/stores/{{storeId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "stores",
+                "{{storeId}}"
+              ]
+            },
+            "description": "superadmin only. 200 { message: \"Store deleted\" }. 404 Store not found."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "05 - Warehouses",
+      "description": "",
+      "item": [
+        {
+          "name": "List Warehouses",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/warehouses",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "warehouses"
+              ]
+            },
+            "description": "superadmin, warehouse_admin (own only). Response includes computed usedM3 and utilizationPct per warehouse. 200 { warehouses }. 401/403."
+          },
+          "response": []
+        },
+        {
+          "name": "Create Warehouse",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/warehouses",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "warehouses"
+              ]
+            },
+            "description": "superadmin only. 201 { warehouse }. 400 missing name/address.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Warehouse Jakarta Timur\",\n  \"address\": \"Jl. Raya Bekasi KM 20\",\n  \"coords\": {\n    \"lat\": -6.2249,\n    \"lng\": 106.9004\n  },\n  \"capacityM3\": 500,\n  \"areaM2\": 1200,\n  \"stores\": [\n    \"{{storeId}}\"\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Warehouse",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/warehouses/{{warehouseId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "warehouses",
+                "{{warehouseId}}"
+              ]
+            },
+            "description": "superadmin only. 200 { warehouse }. 404 Warehouse not found.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"capacityM3\": 600,\n  \"areaM2\": 1300,\n  \"stores\": [\n    \"{{storeId}}\"\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Warehouse",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/warehouses/{{warehouseId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "warehouses",
+                "{{warehouseId}}"
+              ]
+            },
+            "description": "superadmin only. 200 { message: \"Warehouse deleted\" }. 404 Warehouse not found."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "06 - Warehouse Stock",
+      "description": "",
+      "item": [
+        {
+          "name": "Get Warehouse Stock",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/warehouse-stock?warehouse={{warehouseId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "warehouse-stock"
+              ],
+              "query": [
+                {
+                  "key": "warehouse",
+                  "value": "{{warehouseId}}",
+                  "disabled": false
+                }
+              ]
+            },
+            "description": "superadmin, warehouse_admin. warehouse query param required (ObjectId). 200 { warehouseStock }. 400 missing/invalid id. 403 warehouse_admin requesting a warehouse that is not their own."
+          },
+          "response": []
+        },
+        {
+          "name": "Add Warehouse Stock",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/warehouse-stock/add",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "warehouse-stock",
+                "add"
+              ]
+            },
+            "description": "superadmin only. Upsert + $inc (add-only, qty must be > 0). Writes WAREHOUSE_STOCK_ADDED HandoverLog. 201 { warehouseStock } (qty is new cumulative total). 400 missing field / qty<=0 / invalid ids.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"warehouse\": \"{{warehouseId}}\",\n  \"item\": \"{{itemId}}\",\n  \"qty\": 100\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "07 - Store Stock",
+      "description": "",
+      "item": [
+        {
+          "name": "Get Store Stock",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/store-stock?store={{storeId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "store-stock"
+              ],
+              "query": [
+                {
+                  "key": "store",
+                  "value": "{{storeId}}",
+                  "disabled": false
+                }
+              ]
+            },
+            "description": "superadmin, warehouse_admin (linked stores), store_admin (own). store query required. Every row includes computed belowThreshold. 200 { storeStock }. 400 / 403."
+          },
+          "response": []
+        },
+        {
+          "name": "Adjust Store Stock (Opname)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/store-stock/{{storeStockId}}/adjust",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "store-stock",
+                "{{storeStockId}}",
+                "adjust"
+              ]
+            },
+            "description": "store_admin (own store only). Sets absolute qty (opname), qty >= 0. Logs STOCK_ADJUSTED with { storeStockId, oldQty, newQty }. 200 { storeStock }. 400 qty missing/negative. 403 not owning store_admin. 404 row not found.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"qty\": 42\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Set Store Stock Threshold",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/store-stock/{{storeStockId}}/threshold",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "store-stock",
+                "{{storeStockId}}",
+                "threshold"
+              ]
+            },
+            "description": "superadmin, warehouse_admin. threshold >= 0. 200 { storeStock }. 400 threshold missing/negative. 403 warehouse_admin doesn't own this store. 404 row not found.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"threshold\": 10\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "08 - Alerts",
+      "description": "",
+      "item": [
+        {
+          "name": "List Alerts",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/alerts",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "alerts"
+              ]
+            },
+            "description": "superadmin, warehouse_admin. Every StoreStock row where qty < threshold, scoped for warehouse_admin to their linked stores. 200 { alerts }. 401/403."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "09 - Boxes & QR",
+      "description": "",
+      "item": [
+        {
+          "name": "Create Box",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/boxes",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "boxes"
+              ]
+            },
+            "description": "warehouse_admin only. warehouse inferred from req.user.warehouse. Validates & decrements warehouse stock per line; rejects with per-item errors if insufficient. Allocates sequential code BX-000N + uuid qrToken. 201 { box, qrDataUrl }. 400 missing fields / bad ObjectIds / not linked to a warehouse / insufficient stock (errors: [...]).",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"destinationStore\": \"{{storeId}}\",\n  \"items\": [\n    {\n      \"item\": \"{{itemId}}\",\n      \"qty\": 10\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 201) { pm.environment.set('boxId', pm.response.json().box._id); pm.environment.set('boxToken', pm.response.json().box.qrToken); pm.environment.set('boxCode', pm.response.json().box.code); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "List Boxes",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/boxes?status=&search=&page=1&limit=10",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "boxes"
+              ],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "search",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "page",
+                  "value": "1",
+                  "disabled": false
+                },
+                {
+                  "key": "limit",
+                  "value": "10",
+                  "disabled": false
+                }
+              ]
+            },
+            "description": "superadmin, warehouse_admin, driver, store_admin (role-scoped). status filter: PACKED|ASSIGNED|IN_TRANSIT|DELIVERED. search matches box code. 200 { boxes, total, page, limit }. 401."
+          },
+          "response": []
+        },
+        {
+          "name": "Regenerate Box QR",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/boxes/{{boxId}}/qr",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "boxes",
+                "{{boxId}}",
+                "qr"
+              ]
+            },
+            "description": "warehouse_admin (own warehouse). 200 { qrDataUrl }. 403 box belongs to another warehouse. 404 Box not found."
+          },
+          "response": []
+        },
+        {
+          "name": "Assign Driver Manually (fallback)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/boxes/{{boxId}}/assign",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "boxes",
+                "{{boxId}}",
+                "assign"
+              ]
+            },
+            "description": "warehouse_admin only. Manual fallback to the QR-scan flow. status→ASSIGNED. 200 { box }. 400 missing/invalid driverId / box not eligible. 404 Driver not found.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"driverId\": \"{{driverId}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Pickup Box",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/boxes/{{boxId}}/pickup",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "boxes",
+                "{{boxId}}",
+                "pickup"
+              ]
+            },
+            "description": "driver (assigned driver only). status→IN_TRANSIT; logs PICKED_UP with coords. 200 { box }. 403 not the assigned driver. 400 wrong status. 404 Box not found.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"coords\": {\n    \"lat\": -6.2,\n    \"lng\": 106.816\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "10 - Scan (QR)",
+      "description": "",
+      "item": [
+        {
+          "name": "Scan Driver QR (assign boxes)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/scan/driver",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "scan",
+                "driver"
+              ]
+            },
+            "description": "warehouse_admin only. token = driver.driverQrToken. All boxIds set to ASSIGNED + assignedDriver in one update. 200 { message, driver }. 400 missing token/boxIds, malformed boxIds, driver QR not recognized, boxes not eligible.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"token\": \"{{driverToken}}\",\n  \"boxIds\": [\n    \"{{boxId}}\"\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Scan Box QR (deliver)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/scan/box",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "scan",
+                "box"
+              ]
+            },
+            "description": "store_admin only. token OR code required (code is a case-insensitive fallback). StoreStock upserted (+= qty) per line, box→DELIVERED, logs DELIVERED. 200 { message, items, box }. 400 token/code required / already delivered. 403 wrong store. 404 Box not found.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"token\": \"{{boxToken}}\",\n  \"coords\": {\n    \"lat\": -6.2608,\n    \"lng\": 106.8133\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "11 - Drivers",
+      "description": "",
+      "item": [
+        {
+          "name": "List Drivers",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/drivers",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "drivers"
+              ]
+            },
+            "description": "superadmin, warehouse_admin. Powers the manual driver-select dropdown fallback. 200 { drivers: [{ id, name }] } (role:\"driver\" only). 401/403."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "12 - Driver Location & Tracking",
+      "description": "",
+      "item": [
+        {
+          "name": "Ping Driver Location",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/driver-location",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "driver-location"
+              ]
+            },
+            "description": "driver only. Upsert own coords, intended every 30-60s while delivering. 200 { driverLocation }. 400 coords required.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"coords\": {\n    \"lat\": -6.2,\n    \"lng\": 106.816\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "List Driver Locations",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/driver-locations",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "driver-locations"
+              ]
+            },
+            "description": "superadmin, warehouse_admin (scoped to drivers with boxes from their warehouse). 200 { driverLocations }. 401/403."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "13 - Dashboard",
+      "description": "",
+      "item": [
+        {
+          "name": "Dashboard Stats",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/dashboard/stats",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "dashboard",
+                "stats"
+              ]
+            },
+            "description": "superadmin only. 200 { boxesByStatus, totalUsers, lowStockAlerts, warehouseUtilizationPct }. 401/403."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "14 - Logs (audit trail)",
+      "description": "",
+      "item": [
+        {
+          "name": "List Logs",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/logs?box=&store=&page=1&limit=20",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "logs"
+              ],
+              "query": [
+                {
+                  "key": "box",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "store",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "page",
+                  "value": "1",
+                  "disabled": false
+                },
+                {
+                  "key": "limit",
+                  "value": "20",
+                  "disabled": false
+                }
+              ]
+            },
+            "description": "superadmin, warehouse_admin, store_admin (scoped). box/store optional ObjectId filters. 200 { logs, total, page, limit }. 400 invalid box/store id format."
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}
