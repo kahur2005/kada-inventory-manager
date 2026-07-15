@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { Link } from 'react-router-dom';
 import apiClient from '../../api/client';
 import QrDisplay from '../../components/QrDisplay';
 
@@ -8,14 +9,18 @@ export default function BoxesPage() {
   const [items, setItems] = useState([]);
   const [status, setStatus] = useState('');
   const [search, setSearch] = useState('');
+  const [from, setFrom] = useState('');
+  const [to, setTo] = useState('');
   const [destinationStore, setDestinationStore] = useState('');
   const [lineItems, setLineItems] = useState([{ item: '', qty: 1 }]);
   const [newBoxQr, setNewBoxQr] = useState(null);
 
   const loadBoxes = useCallback(async () => {
-    const res = await apiClient.get('/boxes', { params: { status, search, page: 1, limit: 10 } });
+    const res = await apiClient.get('/boxes', {
+      params: { status, search, page: 1, limit: 10, ...(from && { from }), ...(to && { to }) },
+    });
     setBoxes(res.data.boxes);
-  }, [status, search]);
+  }, [status, search, from, to]);
 
   useEffect(() => {
     loadBoxes();
@@ -79,6 +84,14 @@ export default function BoxesPage() {
           <label htmlFor="box-search">Search code</label>
           <input id="box-search" value={search} onChange={(e) => setSearch(e.target.value)} />
         </div>
+        <div>
+          <label htmlFor="box-from">Created from</label>
+          <input id="box-from" type="date" value={from} onChange={(e) => setFrom(e.target.value)} />
+        </div>
+        <div>
+          <label htmlFor="box-to">Created to</label>
+          <input id="box-to" type="date" value={to} onChange={(e) => setTo(e.target.value)} />
+        </div>
       </div>
 
       <table>
@@ -87,6 +100,8 @@ export default function BoxesPage() {
             <th>Code</th>
             <th>Status</th>
             <th>Destination</th>
+            <th>Created</th>
+            <th></th>
           </tr>
         </thead>
         <tbody>
@@ -95,6 +110,10 @@ export default function BoxesPage() {
               <td className="font-mono">{box.code}</td>
               <td><span className={`badge badge-${box.status}`}>{box.status}</span></td>
               <td>{box.destinationStore?.name}</td>
+              <td>{box.createdAt ? new Date(box.createdAt).toLocaleString() : '-'}</td>
+              <td>
+                <Link className="btn-sm" to={`/warehouse/history?box=${box._id}`}>History</Link>
+              </td>
             </tr>
           ))}
         </tbody>
