@@ -6,6 +6,7 @@ const storeStockSchema = new mongoose.Schema(
     item: { type: mongoose.Schema.Types.ObjectId, ref: 'Item', required: true },
     qty: { type: Number, default: 0, min: 0 },
     threshold: { type: Number, default: 0, min: 0 },
+    maxLevel: { type: Number, default: 0, min: 0 },
   },
   { timestamps: true }
 );

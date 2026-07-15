@@ -12,6 +12,7 @@ const StoreStock = require('./models/StoreStock');
 const Box = require('./models/Box');
 const HandoverLog = require('./models/HandoverLog');
 const DriverLocation = require('./models/DriverLocation');
+const StockHistory = require('./models/StockHistory');
 
 const ITEM_DEFS = [
   { name: 'Indomie Goreng', sku: 'IDG-001', unit: 'pcs', volumeM3: 0.0005 },
@@ -40,6 +41,7 @@ async function seed() {
     Box.deleteMany({}),
     HandoverLog.deleteMany({}),
     DriverLocation.deleteMany({}),
+    StockHistory.deleteMany({}),
   ]);
 
   const stores = await Store.insertMany([
@@ -96,10 +98,84 @@ async function seed() {
         item: item._id,
         qty: isDemoLowStock ? 3 : 50,
         threshold: 10,
+        maxLevel: 100,
       });
     });
   });
   await StoreStock.insertMany(storeStockDocs);
+
+  // Seed StockHistory for warehouse and store items (last 30 days)
+  const now = Date.now();
+  const DAY = 86400000;
+  const stockHistoryDocs = [];
+  for (const wh of warehouses) {
+    for (const item of items.slice(0, 4)) {
+      let qty = 100;
+      for (let d = 30; d >= 0; d--) {
+        const change = Math.floor(Math.random() * 20) - 5;
+        qty = Math.max(20, qty + change);
+        stockHistoryDocs.push({
+          stockType: 'warehouse',
+          warehouse: wh._id,
+          item: item._id,
+          qty,
+          changeDelta: change,
+          reason: change >= 0 ? 'RESTOCK' : 'DELIVERY',
+          timestamp: new Date(now - d * DAY),
+        });
+      }
+    }
+  }
+  for (const store of stores) {
+    for (const item of items.slice(0, 4)) {
+      let qty = 50;
+      for (let d = 30; d >= 0; d--) {
+        const change = Math.floor(Math.random() * 10) - 4;
+        qty = Math.max(5, qty + change);
+        stockHistoryDocs.push({
+          stockType: 'store',
+          store: store._id,
+          item: item._id,
+          qty,
+          changeDelta: change,
+          reason: change >= 0 ? 'RECEIVED' : 'ADJUSTMENT',
+          timestamp: new Date(now - d * DAY),
+        });
+      }
+    }
+  }
+  await StockHistory.insertMany(stockHistoryDocs);
+
+  // Seed delivered boxes with driver HandoverLogs for driver performance data
+  const boxDocs = [];
+  const logDocs = [];
+  for (let i = 0; i < 8; i++) {
+    const store = stores[i % stores.length];
+    const assignedAt = new Date(now - (30 - i * 3) * DAY - 3600000 * (2 + Math.random() * 4));
+    const deliveredAt = new Date(assignedAt.getTime() + 3600000 * (1 + Math.random() * 3));
+    const box = {
+      code: `BOX-SEED-${String(i + 1).padStart(3, '0')}`,
+      qrToken: uuidv4(),
+      warehouse: warehouses[0]._id,
+      destinationStore: store._id,
+      items: [{ item: items[i % items.length]._id, qty: 5 }],
+      status: 'DELIVERED',
+      assignedDriver: driver._id,
+      createdAt: assignedAt,
+      updatedAt: deliveredAt,
+    };
+    boxDocs.push(box);
+  }
+  const createdBoxes = await Box.insertMany(boxDocs);
+  for (const box of createdBoxes) {
+    const assignedAt = new Date(box.createdAt);
+    const deliveredAt = new Date(box.updatedAt);
+    logDocs.push(
+      { box: box._id, actor: driver._id, action: 'DRIVER_ASSIGNED', timestamp: assignedAt },
+      { box: box._id, actor: driver._id, action: 'DELIVERED', timestamp: deliveredAt }
+    );
+  }
+  await HandoverLog.insertMany(logDocs);
 
   console.log('Seed complete. Demo accounts (all passwords: password123):');
   console.log('  superadmin@logistiq.demo');
