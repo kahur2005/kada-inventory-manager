@@ -18,15 +18,20 @@ export default function DriverQrPage() {
   }, [user?.driverQrToken]);
 
   const loadBoxes = useCallback(async () => {
-    const res = await apiClient.get('/boxes', { params: { page: 1, limit: 50 } });
-    setBoxes(res.data.boxes);
+    try {
+      const res = await apiClient.get('/boxes', { params: { page: 1, limit: 50 } });
+      setBoxes(res.data.boxes);
+    } catch {
+      // Keep last-known boxes state on poll failure
+    }
   }, []);
 
   useEffect(() => {
+    if (!user?.driverQrToken) return;
     loadBoxes();
     const poll = setInterval(loadBoxes, POLL_INTERVAL_MS);
     return () => clearInterval(poll);
-  }, [loadBoxes]);
+  }, [loadBoxes, user?.driverQrToken]);
 
   const carrying = boxes.filter((b) => ['ASSIGNED', 'IN_TRANSIT'].includes(b.status));
 
