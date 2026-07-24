@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const healthRoutes = require('./routes/healthRoutes');
@@ -5,7 +6,27 @@ const { notFound, errorHandler } = require('./middleware/errorHandler');
 
 const app = express();
 
-app.use(cors({ origin: process.env.CLIENT_ORIGIN || '*' }));
+const envOrigins = process.env.CLIENT_ORIGIN
+  ? process.env.CLIENT_ORIGIN.split(',').map((o) => o.trim())
+  : [];
+
+app.use(
+  cors({
+    origin: (origin, cb) => {
+      if (
+        !origin ||
+        envOrigins.length === 0 ||
+        envOrigins.includes(origin) ||
+        origin.endsWith('.vercel.app')
+      ) {
+        cb(null, true);
+      } else {
+        cb(new Error('Not allowed by CORS'));
+      }
+    },
+    credentials: true,
+  })
+);
 app.use(express.json());
 
 app.use('/api/health', healthRoutes);

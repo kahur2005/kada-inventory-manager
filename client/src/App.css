@@ -2083,46 +2083,66 @@ td input[type="number"] {
     height: auto;
     min-height: auto;
     position: static;
-    flex-direction: row;
+    flex-direction: column;
     padding: 0;
-    overflow-x: auto;
+    overflow-x: hidden;
   }
 
   .app-shell > nav::before {
     display: none;
   }
 
+  .app-shell > nav .nav-profile {
+    border-bottom: 1px solid var(--border);
+    border-right: none;
+    padding: 10px 14px;
+    flex-shrink: 0;
+  }
+
+  .app-shell > nav .nav-avatar {
+    width: 36px;
+    height: 36px;
+    font-size: 1rem;
+  }
+
+  .app-shell > nav .nav-profile-text strong {
+    font-size: 0.875rem;
+  }
+
+  .app-shell > nav .nav-profile-text span {
+    font-size: 0.75rem;
+  }
+
+  .app-shell > nav .nav-scope {
+    flex-direction: column;
+    border-bottom: 1px solid var(--border);
+    border-right: none;
+    padding: 8px 12px;
+    gap: 6px;
+  }
+
   .app-shell > nav ul {
     flex-direction: row;
-    padding: 10px;
+    padding: 8px 10px;
     gap: 4px;
     overflow-x: auto;
+    flex-shrink: 0;
+    border-bottom: 1px solid var(--border);
   }
 
   .app-shell > nav ul li a {
     padding: 8px 14px;
     font-size: 0.8125rem;
+    white-space: nowrap;
   }
 
   .app-shell > nav ul li a::before {
     display: none;
   }
 
-  .app-shell > nav .nav-profile {
-    border-bottom: none;
-    border-right: 1px solid var(--border);
-    padding: 10px 14px;
-  }
-
-  .app-shell > nav .nav-scope {
-    flex-direction: row;
-    border-bottom: none;
-    border-right: 1px solid var(--border);
-    padding: 8px 12px;
-  }
-
   .app-shell > nav .nav-footer {
-    margin: 10px;
+    margin: 8px 10px 12px;
+    flex-shrink: 0;
   }
 
   .app-shell > nav .logout-btn {
