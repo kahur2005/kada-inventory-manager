@@ -31,30 +31,7 @@ export default function DashboardPage() {
       .then((res) => setLogs(res.data.logs));
   }, []);
 
-  const itemsFlow = stats?.warehouseFlow?.[period] || [];
-  const maxFlow = Math.max(...itemsFlow.map((r) => r.inbound + r.outbound), 1);
   const slowMovingItems = stats?.slowMovingItems || [];
-
-  const grouped = itemsFlow.reduce((acc, it) => {
-    const label = it.item?.name || it.item?.sku || "Unknown";
-    const cat = it.item?.category || "Other";
-    const entry = { ...it, label, category: cat };
-    if (!acc[cat]) acc[cat] = [];
-    acc[cat].push(entry);
-    return acc;
-  }, {});
-
-  const categoryTotals = Object.entries(grouped).map(([category, items]) => {
-    const inboundTotal = items.reduce((s, x) => s + (x.inbound || 0), 0);
-    const outboundTotal = items.reduce((s, x) => s + (x.outbound || 0), 0);
-    return { category, inboundTotal, outboundTotal, items };
-  });
-
-  const maxCategoryValue = Math.max(
-    ...categoryTotals.map((c) => Math.max(c.inboundTotal, c.outboundTotal)),
-    1,
-  );
-  const [selectedCategory, setSelectedCategory] = useState(null);
 
   return (
     <div>
@@ -116,10 +93,24 @@ export default function DashboardPage() {
 
       <div className="card mb-lg">
         <div className="card-header">
-          <h3>Stock Turnover</h3>
-          <p className="text-muted">
-            Perputaran stok toko berdasarkan pengiriman delivered
-          </p>
+          <div>
+            <h3>Stock Turnover</h3>
+            <p className="text-muted">
+              Perputaran stok toko berdasarkan pengiriman delivered
+            </p>
+          </div>
+          <div role="group" aria-label="Dashboard period">
+            {PERIODS.map((option) => (
+              <button
+                key={option}
+                type="button"
+                aria-pressed={period === option}
+                onClick={() => setPeriod(option)}
+              >
+                {PERIOD_LABELS[option]}
+              </button>
+            ))}
+          </div>
         </div>
         <div className="turnover-grid">
           <div className="turnover-card">

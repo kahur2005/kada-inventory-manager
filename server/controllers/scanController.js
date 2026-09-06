@@ -39,11 +39,12 @@ async function scanDriverAssign(req, res) {
   const boxUpdate = { status: 'ASSIGNED', assignedDriver: driver._id };
   if (expectedArrivalDate) boxUpdate.expectedArrival = expectedArrivalDate;
   await Box.updateMany({ _id: { $in: boxIds } }, boxUpdate);
-  await HandoverLog.create({
+  await HandoverLog.create(boxes.map((box) => ({
+    box: box._id,
     actor: req.user.id,
     action: 'DRIVER_ASSIGNED',
     meta: { driver: driver._id.toString(), boxIds },
-  });
+  })));
 
   res.json({
     message: `${boxes.length} box(es) assigned to ${driver.name}`,
@@ -63,6 +64,9 @@ async function scanBox(req, res) {
   if (!token && !code) {
     return res.status(400).json({ message: 'token or code is required' });
   }
+  if (code && typeof code !== 'string') {
+    return res.status(400).json({ message: 'code must be a string' });
+  }
 
   const box = token
     ? await Box.findOne({ qrToken: token }).populate('items.item', 'name sku unit')
@@ -78,28 +82,55 @@ async function scanBox(req, res) {
     return res.status(403).json({ message: 'This box is not destined for your store' });
   }
 
-  for (const line of box.items) {
-    await StoreStock.findOneAndUpdate(
-      { store: req.user.store, item: line.item._id },
-      { $inc: { qty: line.qty }, $setOnInsert: { threshold: 0 } },
-      { upsert: true }
-    );
+  const session = await mongoose.startSession();
+  let deliveredBox;
+  try {
+    await session.withTransaction(async () => {
+      deliveredBox = await Box.findOneAndUpdate(
+        {
+          _id: box._id,
+          destinationStore: req.user.store,
+          status: { $in: ['ASSIGNED', 'IN_TRANSIT'] },
+        },
+        { $set: { status: 'DELIVERED' } },
+        { new: true, session },
+      ).populate('items.item', 'name sku unit');
+
+      if (!deliveredBox) {
+        throw Object.assign(new Error('Box is already delivered or no longer eligible'), { status: 400 });
+      }
+
+      for (const line of deliveredBox.items) {
+        if (!line.item) {
+          throw Object.assign(new Error('One or more items on this box no longer exist'), { status: 409 });
+        }
+        await StoreStock.findOneAndUpdate(
+          { store: req.user.store, item: line.item._id },
+          { $inc: { qty: line.qty }, $setOnInsert: { threshold: 0 } },
+          { upsert: true, session },
+        );
+      }
+
+      const items = deliveredBox.items.map((line) => ({ name: line.item.name, qty: line.qty }));
+      await HandoverLog.create([{
+        box: deliveredBox._id,
+        actor: req.user.id,
+        action: 'DELIVERED',
+        coords,
+        meta: { items },
+      }], { session });
+    });
+  } catch (error) {
+    return res.status(error.status || (error.code === 11000 ? 409 : 500)).json({
+      message: error.message || 'Unable to deliver box',
+    });
+  } finally {
+    await session.endSession();
   }
 
-  box.status = 'DELIVERED';
-  await box.save();
+  const items = deliveredBox.items.map((line) => ({ name: line.item.name, qty: line.qty }));
 
-  const items = box.items.map((line) => ({ name: line.item.name, qty: line.qty }));
-
-  await HandoverLog.create({
-    box: box._id,
-    actor: req.user.id,
-    action: 'DELIVERED',
-    coords,
-    meta: { items },
-  });
-
-  res.json({ message: 'Box delivered', items, box });
+  res.json({ message: 'Box delivered', items, box: deliveredBox });
 }
 
 module.exports = { scanDriverAssign, scanBox };

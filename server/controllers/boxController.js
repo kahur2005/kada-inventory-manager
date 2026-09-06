@@ -4,6 +4,8 @@ const Box = require('../models/Box');
 const WarehouseStock = require('../models/WarehouseStock');
 const HandoverLog = require('../models/HandoverLog');
 const User = require('../models/User');
+const Store = require('../models/Store');
+const Item = require('../models/Item');
 const { generateQrDataUrl } = require('../utils/qr');
 const { buildDateRangeFilter } = require('../utils/dateRange');
 
@@ -11,9 +13,16 @@ function escapeRegex(str) {
   return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
-async function nextBoxCode() {
-  const count = await Box.countDocuments();
+async function nextBoxCode(session) {
+  const count = await Box.countDocuments({}, session ? { session } : undefined);
   return `BX-${String(count + 1).padStart(4, '0')}`;
+}
+
+function httpError(message, status = 400, errors) {
+  const error = new Error(message);
+  error.status = status;
+  if (errors) error.errors = errors;
+  return error;
 }
 
 async function createBox(req, res) {
@@ -27,11 +36,16 @@ async function createBox(req, res) {
     return res.status(400).json({ message: 'destinationStore must be a valid id' });
   }
 
-  // Validate that all item ids are valid ObjectIds
+  const normalizedByItem = new Map();
   for (const line of items) {
-    if (!mongoose.Types.ObjectId.isValid(line.item)) {
+    if (!line || !mongoose.Types.ObjectId.isValid(line.item)) {
       return res.status(400).json({ message: 'item ids must be valid' });
     }
+    if (!Number.isInteger(line.qty) || line.qty <= 0) {
+      return res.status(400).json({ message: 'item quantities must be positive integers' });
+    }
+    const itemId = line.item.toString();
+    normalizedByItem.set(itemId, (normalizedByItem.get(itemId) || 0) + line.qty);
   }
 
   const warehouseId = req.user.warehouse;
@@ -39,37 +53,66 @@ async function createBox(req, res) {
     return res.status(400).json({ message: 'You are not linked to a warehouse' });
   }
 
-  const stockRows = await WarehouseStock.find({
-    warehouse: warehouseId,
-    item: { $in: items.map((line) => line.item) },
-  });
-  const stockByItem = new Map(stockRows.map((row) => [row.item.toString(), row.qty]));
+  const normalizedItems = [...normalizedByItem.entries()].map(([item, qty]) => ({ item, qty }));
+  let box;
+  let code;
+  let qrToken;
 
-  const errors = [];
-  for (const line of items) {
-    const have = stockByItem.get(line.item) || 0;
-    if (have < line.qty) {
-      errors.push(`Insufficient stock for item ${line.item}: have ${have}, need ${line.qty}`);
+  for (let attempt = 0; attempt < 3 && !box; attempt += 1) {
+    const session = await mongoose.startSession();
+    try {
+      await session.withTransaction(async () => {
+        const [store, itemCount] = await Promise.all([
+          Store.exists({ _id: destinationStore }).session(session),
+          Item.countDocuments({ _id: { $in: normalizedItems.map((line) => line.item) } }).session(session),
+        ]);
+        if (!store) throw httpError('Destination store not found', 404);
+        if (itemCount !== normalizedItems.length) throw httpError('One or more items were not found', 400);
+
+        const stockRows = await WarehouseStock.find({
+          warehouse: warehouseId,
+          item: { $in: normalizedItems.map((line) => line.item) },
+        }).session(session);
+        const stockByItem = new Map(stockRows.map((row) => [row.item.toString(), row.qty]));
+        const errors = normalizedItems
+          .filter((line) => (stockByItem.get(line.item.toString()) || 0) < line.qty)
+          .map((line) => `Insufficient stock for item ${line.item}: have ${stockByItem.get(line.item.toString()) || 0}, need ${line.qty}`);
+        if (errors.length > 0) throw httpError(errors.join('; '), 400, errors);
+
+        for (const line of normalizedItems) {
+          const row = await WarehouseStock.findOneAndUpdate(
+            { warehouse: warehouseId, item: line.item, qty: { $gte: line.qty } },
+            { $inc: { qty: -line.qty } },
+            { new: true, session },
+          );
+          if (!row) {
+            throw httpError(`Insufficient stock for item ${line.item}: need ${line.qty}`);
+          }
+        }
+
+        code = await nextBoxCode(session);
+        qrToken = uuidv4();
+        [box] = await Box.create(
+          [{ code, qrToken, warehouse: warehouseId, destinationStore, items: normalizedItems }],
+          { session },
+        );
+
+        await HandoverLog.create([{
+          box: box._id,
+          actor: req.user.id,
+          action: 'BOX_PACKED',
+          meta: { code, destinationStore, items: normalizedItems },
+        }], { session });
+      });
+    } catch (error) {
+      if (error.code === 11000 && attempt < 2) continue;
+      const body = { message: error.message || 'Unable to create box' };
+      if (error.errors) body.errors = error.errors;
+      return res.status(error.status || (error.code === 11000 ? 409 : 500)).json(body);
+    } finally {
+      await session.endSession();
     }
   }
-  if (errors.length > 0) {
-    return res.status(400).json({ message: errors.join('; '), errors });
-  }
-
-  for (const line of items) {
-    await WarehouseStock.updateOne({ warehouse: warehouseId, item: line.item }, { $inc: { qty: -line.qty } });
-  }
-
-  const code = await nextBoxCode();
-  const qrToken = uuidv4();
-  const box = await Box.create({ code, qrToken, warehouse: warehouseId, destinationStore, items });
-
-  await HandoverLog.create({
-    box: box._id,
-    actor: req.user.id,
-    action: 'BOX_PACKED',
-    meta: { code, destinationStore, items },
-  });
 
   const qrDataUrl = await generateQrDataUrl({ type: 'box', id: box._id.toString(), token: qrToken });
 

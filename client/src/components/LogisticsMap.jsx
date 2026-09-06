@@ -85,10 +85,17 @@ function DriverRoute({ driver, onRouteInfo }) {
   return <Polyline positions={coords} pathOptions={{ color: "#2563eb", weight: 5, opacity: 0.8 }} />;
 }
 
+function hasCoordinates(location) {
+  return Number.isFinite(location?.lat) && Number.isFinite(location?.lng);
+}
+
 export default function LogisticsMap({ locations, selectedDriverId, onRouteInfo }) {
   const center = [-6.2, 106.8];
+  const warehouses = (locations?.warehouses || []).filter(hasCoordinates);
+  const stores = (locations?.stores || []).filter(hasCoordinates);
+  const drivers = (locations?.drivers || []).filter(hasCoordinates);
   const selectedDriver = selectedDriverId
-    ? locations.drivers.find((d) => d.id === selectedDriverId)
+    ? drivers.find((d) => d.id === selectedDriverId)
     : null;
 
   return (
@@ -105,7 +112,7 @@ export default function LogisticsMap({ locations, selectedDriverId, onRouteInfo 
       {selectedDriver && <FlyToDriver driver={selectedDriver} />}
       {selectedDriver && <DriverRoute driver={selectedDriver} onRouteInfo={onRouteInfo} />}
 
-      {locations.warehouses.map((w) => (
+      {warehouses.map((w) => (
         <Marker key={w.id} position={[w.lat, w.lng]} icon={warehouseIcon}>
           <Popup>
             <strong>Gudang</strong>
@@ -117,7 +124,7 @@ export default function LogisticsMap({ locations, selectedDriverId, onRouteInfo 
         </Marker>
       ))}
 
-      {locations.stores.map((s) => (
+      {stores.map((s) => (
         <Marker key={s.id} position={[s.lat, s.lng]} icon={storeIcon}>
           <Popup>
             <strong>Toko</strong>
@@ -129,7 +136,7 @@ export default function LogisticsMap({ locations, selectedDriverId, onRouteInfo 
         </Marker>
       ))}
 
-      {locations.drivers.map((d) => (
+      {drivers.map((d) => (
         <Marker
           key={d.id}
           position={[d.lat, d.lng]}
