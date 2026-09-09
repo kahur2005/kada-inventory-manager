@@ -1,0 +1,2 @@
+-- Seed data is intentionally empty. Production and demo data must be provisioned
+-- through the Auth flow and the guarded migration/import scripts.

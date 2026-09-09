@@ -8,6 +8,10 @@
     "dev": "nodemon server.js",
     "start": "node server.js",
     "seed": "node seed.js",
+    "migration:export": "node scripts/export-mongo-for-supabase.js",
+    "migration:validate": "node scripts/validate-mongo-export.js",
+    "migration:import": "node scripts/import-supabase.js",
+    "migration:verify": "node scripts/verify-supabase-import.js",
     "test": "cross-env NODE_ENV=test jest --runInBand"
   },
   "dependencies": {
@@ -17,6 +21,7 @@
     "express": "^4.19.2",
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.4.0",
+    "pg": "^8.16.0",
     "qrcode": "^1.5.4",
     "uuid": "^11.1.1"
   },

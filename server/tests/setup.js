@@ -8,6 +8,10 @@ let mongod;
 beforeAll(async () => {
   mongod = await MongoMemoryReplSet.create({ replSet: { count: 1 } });
   await mongoose.connect(mongod.getUri());
+
+  // Mongoose builds unique indexes asynchronously. Await model initialization
+  // so duplicate-key tests are deterministic when the suite starts in parallel.
+  await Promise.all(Object.values(mongoose.models).map((model) => model.init()));
 });
 
 afterEach(async () => {
