@@ -72,7 +72,7 @@ async function driverPerformance(req, res) {
     const store = storeMap[box.destinationStore?._id?.toString()];
     let estimatedMinutes = null;
     let distanceKm = null;
-    if (store?.coords?.lat && store?.coords?.lng && warehouse.coords?.lat && warehouse.coords?.lng) {
+    if (store?.coords?.lat != null && store?.coords?.lng != null && warehouse.coords?.lat != null && warehouse.coords?.lng != null) {
       distanceKm = haversineKm(warehouse.coords.lat, warehouse.coords.lng, store.coords.lat, store.coords.lng);
       estimatedMinutes = Math.round((distanceKm / AVG_SPEED_KPH) * 60);
     }
@@ -122,7 +122,7 @@ async function driverPerformance(req, res) {
   }));
 
   const storeProximity = stores
-    .filter((s) => s.coords?.lat && s.coords?.lng && warehouse.coords?.lat && warehouse.coords?.lng)
+    .filter((s) => s.coords?.lat != null && s.coords?.lng != null && warehouse.coords?.lat != null && warehouse.coords?.lng != null)
     .map((s) => {
       const dist = haversineKm(warehouse.coords.lat, warehouse.coords.lng, s.coords.lat, s.coords.lng);
       const estMin = Math.round((dist / AVG_SPEED_KPH) * 60);

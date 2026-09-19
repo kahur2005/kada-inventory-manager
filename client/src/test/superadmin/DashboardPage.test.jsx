@@ -1,5 +1,5 @@
 import { describe, test, expect, vi } from "vitest";
-import { render, screen, waitFor, within } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import DashboardPage from "../../pages/superadmin/DashboardPage";
 import apiClient from "../../api/client";
 
@@ -69,5 +69,35 @@ describe("DashboardPage", () => {
       .closest(".stat-card");
     expect(within(lowStockCard).getByText("3")).toBeInTheDocument();
     expect(screen.getByText(/BOX_PACKED/)).toBeInTheDocument();
+  });
+
+  test("switches turnover metrics when a different period is selected", async () => {
+    apiClient.get = vi.fn((url) => {
+      if (url === "/dashboard/stats") {
+        return Promise.resolve({
+          data: {
+            boxesByStatus: {},
+            warehouseFlow: { daily: [], weekly: [], monthly: [] },
+            stockTurnover: {
+              daily: { deliveredQty: 1, totalQty: 10, ratioPct: 10 },
+              weekly: { deliveredQty: 7, totalQty: 20, ratioPct: 35 },
+              monthly: { deliveredQty: 30, totalQty: 50, ratioPct: 60 },
+            },
+            slowMovingItems: [],
+          },
+        });
+      }
+      if (url === "/warehouses") return Promise.resolve({ data: { warehouses: [] } });
+      if (url === "/stores") return Promise.resolve({ data: { stores: [] } });
+      if (url === "/driver-locations") return Promise.resolve({ data: { driverLocations: [] } });
+      if (url === "/logs") return Promise.resolve({ data: { logs: [] } });
+      return Promise.reject(new Error(`unexpected ${url}`));
+    });
+
+    render(<DashboardPage />);
+    await waitFor(() => expect(screen.getByText("1")).toBeInTheDocument());
+    fireEvent.click(screen.getByRole("button", { name: "Mingguan" }));
+
+    expect(screen.getByText("7")).toBeInTheDocument();
   });
 });

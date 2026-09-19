@@ -6,7 +6,7 @@ Multi-warehouse stock & delivery tracking system.
 
 1. `npm install` (root) — installs `concurrently`
 2. `cd server && npm install && cp .env.example .env` — fill in `MONGO_URI` (MongoDB Atlas) and `JWT_SECRET`
-3. `cd client && npm install && cp .env.example .env`
+3. `cd client && npm install && cp .env.example .env` (optional for local development; the client defaults to `/api` and Vite proxies it to port 5000)
 4. From repo root: `npm run dev` — runs server (port 5000) and client (port 5173) together
 
 ## Testing

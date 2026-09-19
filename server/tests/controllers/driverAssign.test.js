@@ -49,7 +49,8 @@ describe('POST /api/scan/driver', () => {
     expect(updated1.assignedDriver.toString()).toBe(driver._id.toString());
     expect(updated2.status).toBe('ASSIGNED');
     const logs = await HandoverLog.find({ action: 'DRIVER_ASSIGNED' });
-    expect(logs).toHaveLength(1);
+    expect(logs).toHaveLength(2);
+    expect(logs.every((log) => log.box)).toBe(true);
   });
 
   test('rejects an unrecognized driver token', async () => {

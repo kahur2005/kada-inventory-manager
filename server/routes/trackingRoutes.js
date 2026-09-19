@@ -1,8 +1,10 @@
 const express = require("express");
+const mongoose = require("mongoose");
 const Warehouse = require("../models/Warehouse");
 const Store = require("../models/Store");
 const DriverLocation = require("../models/DriverLocation");
 const Box = require("../models/Box");
+const User = require("../models/User");
 const { authRequired, requireRole } = require("../middleware/auth");
 
 const router = express.Router();
@@ -12,11 +14,18 @@ router.use(authRequired);
 
 router.get("/locations", requireRole("superadmin", "warehouse_admin"), async (req, res) => {
   try {
+    const warehouseScope = await getWarehouseScope(req);
+    const warehouseFilter = warehouseScope ? { _id: req.user.warehouse } : {};
+    const storeFilter = warehouseScope ? { _id: { $in: warehouseScope.storeIds } } : {};
+    const driverFilter = warehouseScope ? { driver: { $in: warehouseScope.driverIds } } : {};
+    const boxFilter = warehouseScope
+      ? { warehouse: req.user.warehouse, assignedDriver: { $ne: null }, status: { $in: ["ASSIGNED", "IN_TRANSIT"] } }
+      : { assignedDriver: { $ne: null }, status: { $in: ["ASSIGNED", "IN_TRANSIT"] } };
     const [warehouses, stores, drivers, activeBoxes] = await Promise.all([
-      Warehouse.find().lean(),
-      Store.find().lean(),
-      DriverLocation.find().populate("driver", "name").lean(),
-      Box.find({ assignedDriver: { $ne: null }, status: { $in: ["ASSIGNED", "IN_TRANSIT"] } })
+      Warehouse.find(warehouseFilter).lean(),
+      Store.find(storeFilter).lean(),
+      DriverLocation.find(driverFilter).populate("driver", "name").lean(),
+      Box.find(boxFilter)
         .populate("destinationStore", "name coords")
         .select("assignedDriver destinationStore expectedArrival status updatedAt")
         .lean(),
@@ -56,6 +65,9 @@ router.post("/drivers/:driverId", requireRole("superadmin", "warehouse_admin", "
   }
 
   try {
+    const access = await checkDriverWriteAccess(req, driverId);
+    if (access.error) return res.status(access.error.status).json({ error: access.error.message });
+
     const update = {
       coords: { lat, lng },
       updatedAt: new Date(),
@@ -92,6 +104,9 @@ router.post("/drivers/:driverId/status", requireRole("superadmin", "warehouse_ad
   }
 
   try {
+    const access = await checkDriverWriteAccess(req, driverId);
+    if (access.error) return res.status(access.error.status).json({ error: access.error.message });
+
     const driver = await DriverLocation.findOneAndUpdate(
       { driver: driverId },
       { $set: { status, updatedAt: new Date() } },
@@ -108,6 +123,37 @@ router.post("/drivers/:driverId/status", requireRole("superadmin", "warehouse_ad
     res.status(500).json({ error: "Gagal menyimpan status sopir." });
   }
 });
+
+async function getWarehouseScope(req) {
+  if (req.user.role === "superadmin") return null;
+  const warehouse = await Warehouse.findById(req.user.warehouse).select("stores").lean();
+  const driverIds = await Box.distinct("assignedDriver", {
+    warehouse: req.user.warehouse,
+    assignedDriver: { $ne: null },
+  });
+  return { storeIds: warehouse?.stores || [], driverIds };
+}
+
+async function checkDriverWriteAccess(req, driverId) {
+  if (!mongoose.Types.ObjectId.isValid(driverId)) {
+    return { error: { status: 400, message: "Driver ID tidak valid." } };
+  }
+  if (req.user.role === "driver" && req.user.id !== driverId) {
+    return { error: { status: 403, message: "Driver hanya dapat mengubah lokasi sendiri." } };
+  }
+
+  const target = await requireDriver(driverId);
+  if (!target) return { error: { status: 404, message: "Sopir tidak ditemukan." } };
+  if (req.user.role === "warehouse_admin") {
+    const assigned = await Box.exists({ warehouse: req.user.warehouse, assignedDriver: driverId });
+    if (!assigned) return { error: { status: 403, message: "Sopir berada di luar gudang Anda." } };
+  }
+  return { target };
+}
+
+function requireDriver(driverId) {
+  return User.findOne({ _id: driverId, role: "driver" }).select("_id name").lean();
+}
 
 function toWarehouseDTO(doc) {
   return { id: doc._id.toString(), name: doc.name, lat: doc.coords?.lat, lng: doc.coords?.lng, address: doc.address };

@@ -85,4 +85,18 @@ describe('POST /api/scan/box', () => {
     const res = await request(app).post('/api/scan/box').set('Authorization', `Bearer ${signToken(storeAdmin)}`).send({ token: 'nope' });
     expect(res.status).toBe(404);
   });
+
+  test('credits store stock only once when the same box is scanned concurrently', async () => {
+    const { store, item, storeAdmin } = await setup();
+    const requests = [1, 2].map(() => request(app)
+      .post('/api/scan/box')
+      .set('Authorization', `Bearer ${signToken(storeAdmin)}`)
+      .send({ token: 'scan-token-1' }));
+
+    const responses = await Promise.all(requests);
+    expect(responses.map((response) => response.status).sort()).toEqual([200, 400]);
+    const stockRow = await StoreStock.findOne({ store: store._id, item: item._id });
+    expect(stockRow.qty).toBe(10);
+    expect(await HandoverLog.countDocuments({ action: 'DELIVERED' })).toBe(1);
+  });
 });
